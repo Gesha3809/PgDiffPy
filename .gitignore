@@ -1,4 +1,6 @@
 *.py[cod]
+# Cloud9 revision files
+.c9revisions
 
 # C extensions
 *.so
