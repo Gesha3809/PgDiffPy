@@ -54,7 +54,7 @@ CREATE SEQUENCE test_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER TABLE public.test_id_seq OWNER TO fordfrog;
+ALTER TABLE public.test OWNER TO fordfrog;
 
 ALTER SEQUENCE test_id_seq OWNED BY test.id;
 

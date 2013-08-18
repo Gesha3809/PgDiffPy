@@ -3,6 +3,9 @@ class PgSchema(object):
         self.tables = dict()
         self.indexes = dict()
         self.functions = dict()
+        self.sequences = dict()
+        self.primaryKeys = dict()
+        self.views = dict()
         self.name = schemaName
         self.comment = None
 
@@ -19,4 +22,13 @@ class PgSchema(object):
         self.indexes[index.name] = index
 
     def addFunction(self, function):
-        self.functions[function.name] = function
+        self.functions[function.getSignature()] = function
+
+    def addSequence(self, sequence):
+        self.sequences[sequence.name] = sequence
+
+    def addPrimaryKey(self, primaryKey):
+        self.primaryKeys[primaryKey.name] = primaryKey
+
+    def addView(self, view):
+        self.views[view.name] = view

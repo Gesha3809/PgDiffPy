@@ -3,6 +3,13 @@ from PgDiffUtils import PgDiffUtils
 class PgDiffTables(object):
 
     @staticmethod
+    def createTables(oldSchema, newSchema, searchPathHelper):
+        for tableName in newSchema.tables:
+            if (oldSchema is None or tableName not in oldSchema.tables):
+                searchPathHelper.outputSearchPath()
+                print "\n%s\n" % newSchema.tables[tableName].getCreationSQL()
+
+    @staticmethod
     def dropTables(oldSchema, newSchema, searchPathHelper):
         if oldSchema is None:
             return

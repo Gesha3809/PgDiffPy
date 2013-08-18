@@ -4,6 +4,11 @@ from parser.CreateTableParser import  CreateTableParser
 from parser.AlterTableParser import AlterTableParser
 from parser.CreateIndexParser import CreateIndexParser
 from parser.CreateFunctionParser import CreateFunctionParser
+from parser.CreateSequenceParser import CreateSequenceParser
+from parser.AlterSequenceParser import AlterSequenceParser
+from parser.CreateViewParser import CreateViewParser
+from parser.CreateTriggerParser import CreateTriggerParser
+from parser.AlterViewParser import AlterViewParser
 
 class PgDumpLoader(object):
 
@@ -41,7 +46,7 @@ class PgDumpLoader(object):
     PATTERN_COMMENT = re.compile("^COMMENT[\s]+ON[\s]+.*$", re.I | re.S)
 
 
-    def loadDatabaseSchema(self, dumpFileName):
+    def loadDatabaseSchema(self, dumpFileName, ignoreSlonyTriggers = False):
         database = PgDatabase()
 
         print "Loading file dump: %s\n" % dumpFileName
@@ -59,39 +64,39 @@ class PgDumpLoader(object):
                 continue
 
             if self.PATTERN_CREATE_TABLE.match(statement):
-                CreateTableParser().parse(database, statement);
+                CreateTableParser.parse(database, statement)
                 continue
 
             if self.PATTERN_ALTER_TABLE.match(statement):
-                AlterTableParser().parse(database, statement)
+                AlterTableParser.parse(database, statement)
                 continue
 
             if self.PATTERN_CREATE_SEQUENCE.match(statement):
-                print 'CreateSequence'
+                CreateSequenceParser.parse(database, statement)
                 continue
 
             if self.PATTERN_ALTER_SEQUENCE.match(statement):
-                print 'AlterSequence'
+                AlterSequenceParser.parse(database, statement)
                 continue
 
             if self.PATTERN_CREATE_INDEX.match(statement):
-                CreateIndexParser().parse(database, statement)
+                CreateIndexParser.parse(database, statement)
                 continue
 
             if self.PATTERN_CREATE_VIEW.match(statement):
-                print 'CreateView'
+                CreateViewParser.parse(database, statement)
                 continue
 
             if self.PATTERN_ALTER_VIEW.match(statement):
-                print 'AlterView'
+                AlterViewParser.parse(database, statement)
                 continue
 
             if self.PATTERN_CREATE_TRIGGER.match(statement):
-                print 'CreateTrigger'
+                CreateTriggerParser.parse(database, statement, ignoreSlonyTriggers)
                 continue
 
             if self.PATTERN_CREATE_FUNCTION.match(statement):
-                CreateFunctionParser().parse(database, statement)
+                CreateFunctionParser.parse(database, statement)
                 continue
 
         return database

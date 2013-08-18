@@ -2,6 +2,12 @@ import argparse
 from loaders.PgDumpLoader import PgDumpLoader
 from SearchPathHelper import SearchPathHelper
 from diff.PgDiffTables import PgDiffTables
+from diff.PgDiffTriggers import PgDiffTriggers
+from diff.PgDiffViews import PgDiffViews
+from diff.PgDiffConstraints import PgDiffConstraints
+from diff.PgDiffIndexes import PgDiffIndexes
+from diff.PgDiffSequences import PgDiffSequences
+from diff.PgDiffFunctions import PgDiffFunctions
 
 class PgDiff(object):
     def createDiff(self, arguments):
@@ -114,22 +120,22 @@ class PgDiff(object):
                     print " IS NULL;"
 
 
-            # PgDiffTriggers.dropTriggers(oldSchema, newSchema, searchPathHelper)
-            # PgDiffFunctions.dropFunctions(arguments, oldSchema, newSchema, searchPathHelper)
-            # PgDiffViews.dropViews(oldSchema, newSchema, searchPathHelper)
-            # PgDiffConstraints.dropConstraints(oldSchema, newSchema, true, searchPathHelper)
-            # PgDiffConstraints.dropConstraints(oldSchema, newSchema, false, searchPathHelper)
-            # PgDiffIndexes.dropIndexes(oldSchema, newSchema, searchPathHelper)
+            PgDiffTriggers.dropTriggers(oldSchema, newSchema, searchPathHelper)
+            PgDiffFunctions.dropFunctions(arguments, oldSchema, newSchema, searchPathHelper)
+            PgDiffViews.dropViews(oldSchema, newSchema, searchPathHelper)
+            PgDiffConstraints.dropConstraints(oldSchema, newSchema, True, searchPathHelper)
+            PgDiffConstraints.dropConstraints(oldSchema, newSchema, False, searchPathHelper)
+            PgDiffIndexes.dropIndexes(oldSchema, newSchema, searchPathHelper)
             # PgDiffTables.dropClusters(oldSchema, newSchema, searchPathHelper)
             PgDiffTables.dropTables(oldSchema, newSchema, searchPathHelper)
-            # PgDiffSequences.dropSequences(oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.dropSequences(oldSchema, newSchema, searchPathHelper)
 
-            # PgDiffSequences.createSequences(oldSchema, newSchema, searchPathHelper)
-            # PgDiffSequences.alterSequences(arguments, oldSchema, newSchema, searchPathHelper)
-            # PgDiffTables.createTables(oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.createSequences(oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.alterSequences(arguments, oldSchema, newSchema, searchPathHelper)
+            PgDiffTables.createTables(oldSchema, newSchema, searchPathHelper)
             PgDiffTables.alterTables(arguments, oldSchema, newSchema, searchPathHelper)
-            # PgDiffSequences.alterCreatedSequences(oldSchema, newSchema, searchPathHelper)
-            # PgDiffFunctions.createFunctions(arguments, oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.alterCreatedSequences(oldSchema, newSchema, searchPathHelper)
+            PgDiffFunctions.createFunctions(arguments, oldSchema, newSchema, searchPathHelper)
             # PgDiffConstraints.createConstraints(oldSchema, newSchema, true, searchPathHelper)
             # PgDiffConstraints.createConstraints(oldSchema, newSchema, false, searchPathHelper)
             # PgDiffIndexes.createIndexes(oldSchema, newSchema, searchPathHelper)
@@ -152,6 +158,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--add-transaction', dest='add_transaction', action='store_true', help="Adds START TRANSACTION and COMMIT TRANSACTION to the generated diff file")
     parser.add_argument('--add-defaults', dest='addDefaults', action='store_true', help="adds DEFAULT ... in case new column has NOT NULL constraint but no default value (the default value is dropped later)")
+    parser.add_argument('--ignore-start-with', dest='ignoreStartWith', action='store_false', help="ignores START WITH modifications on SEQUENCEs (default is not to ignore these changes)")
 
     arguments = parser.parse_args()
 

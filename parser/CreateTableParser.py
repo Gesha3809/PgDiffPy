@@ -3,11 +3,10 @@ from schema.PgTable import PgTable
 from schema.PgConstraint import PgConstraint
 from schema.PgColumn import PgColumn
 
-class CreateTableParser(object):
-    def __init__(self):
-        pass
 
-    def parse(self, database, statement):
+class CreateTableParser(object):
+    @staticmethod
+    def parse(database, statement):
         parser = Parser(statement)
         parser.expect('CREATE', 'TABLE')
 
@@ -29,9 +28,9 @@ class CreateTableParser(object):
 
         while not parser.expectOptional(")"):
             if parser.expectOptional("CONSTRAINT"):
-                self.parseConstraint(parser, table)
+                CreateTableParser.parseConstraint(parser, table)
             else:
-                self.parseColumn(parser, table)
+                CreateTableParser.parseColumn(parser, table)
 
             if parser.expectOptional(")"):
                 break
@@ -41,7 +40,7 @@ class CreateTableParser(object):
 
         while not parser.expectOptional(";"):
             if parser.expectOptional("INHERITS"):
-                self.parseInherits(parser, table)
+                CreateTableParser.parseInherits(parser, table)
             elif parser.expectOptional("WITHOUT"):
                 table.oids = "OIDS=false"
             elif parser.expectOptional("WITH"):
@@ -56,22 +55,21 @@ class CreateTableParser(object):
             else:
                 parser.throwUnsupportedCommand()
 
+    @staticmethod
+    def parseConstraint(parser, table):
+        constraint = PgConstraint(ParserUtils.getObjectName(parser.parseIdentifier()));
+        table.addConstraint(constraint)
+        constraint.definition = parser.getExpression()
+        constraint.tableName = table.name
 
-    def parseConstraint(self, parser, table):
-        #pass
-        #constraint = PgConstraint(ParserUtils.getObjectName(parser.parseIdentifier()));
-        # print parser.parseIdentifier()
-        # table.addConstraint(constraint);
-        # constraint.setDefinition(parser.getExpression());
-        # constraint.setTableName(table.getName());
-        print 'Found constraint!!!'
-
-    def parseColumn(self, parser, table):
+    @staticmethod
+    def parseColumn(parser, table):
         column = PgColumn(ParserUtils.getObjectName(parser.parseIdentifier()))
         table.addColumn(column)
         column.parseDefinition(parser.getExpression())
 
-    def parseInherits(self, parser, table):
+    @staticmethod
+    def parseInherits(parser, table):
         parser.expect("(")
 
         while not parser.expectOptional(")"):

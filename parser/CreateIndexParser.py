@@ -2,7 +2,8 @@ from parser.Parser import Parser, ParserUtils
 from schema.PgIndex import PgIndex
 
 class CreateIndexParser(object):
-    def parse(self, database, statement):
+    @staticmethod
+    def parse(database, statement):
         parser = Parser(statement)
         parser.expect("CREATE")
 

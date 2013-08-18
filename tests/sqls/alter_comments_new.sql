@@ -54,7 +54,7 @@ CREATE SEQUENCE test_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER TABLE public.test_id_seq OWNER TO fordfrog;
+ALTER TABLE public.test OWNER TO fordfrog;
 
 ALTER SEQUENCE test_id_seq OWNED BY test.id;
 
@@ -64,7 +64,7 @@ COMMENT ON SEQUENCE test_id_seq IS 'test table sequence 2';
 CREATE VIEW test_view AS
     SELECT test.id, test.text FROM test;
 
-ALTER TABLE public.test_view OWNER TO fordfrog;
+ALTER VIEW public.test_view OWNER TO fordfrog;
 
 COMMENT ON VIEW test_view IS 'test view 2';
 

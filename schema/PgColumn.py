@@ -13,6 +13,7 @@ class PgColumn(object):
         self.nullValue = True
         self.statistics = None
         self.storage = None
+        self.comment = None
 
     def parseDefinition(self, definition):
         string = definition
@@ -38,20 +39,25 @@ class PgColumn(object):
         self.type = string
 
     def getFullDefinition(self, addDefaults):
-        definition = "%s %s" % (PgDiffUtils.getQuotedName(self.name), self.type)
+        sbSQL = []
+        sbSQL.append(PgDiffUtils.getQuotedName(self.name))
+        sbSQL.append(' ')
+        sbSQL.append(self.type)
 
         if (self.defaultValue is not None and len(self.defaultValue)):
-            definition += " DEFAULT %s" % self.defaultValue
+            sbSQL.append(" DEFAULT ")
+            sbSQL.append(self.defaultValue)
         elif (not self.nullValue and addDefaults):
             defaultColValue = PgColumnUtils.getDefaultValue(self.type);
 
             if (defaultColValue is not None):
-                definition += " DEFAULT %s" % defaultColValue
+                sbSQL.append(" DEFAULT ")
+                sbSQL.append(defaultColValue)
 
         if not self.nullValue:
-            definition += " NOT NULL!"
+            sbSQL.append(" NOT NULL")
 
-        return definition
+        return ''.join(sbSQL)
 
 
 class PgColumnUtils(object):

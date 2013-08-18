@@ -92,6 +92,54 @@ class Parser(object):
 
         return dataType
 
+    def parseString(self):
+        result = ''
+        if (self.statement[self.position] == '\''):
+            escape = False
+            endPos = self.position + 1
+
+            for endPos in range(endPos, len(self.statement)):
+                char = self.statement[endPos]
+
+                if (char == '\\'):
+                    escape = not escape
+                elif not escape and char == '\'':
+                    if (endPos + 1 < len(self.statement) and self.statement[endPos + 1] == '\''):
+                        endPos += 1
+                    else:
+                        break
+
+
+            result = self.statement[self.position, endPos + 1]
+            # except (final Throwable ex) {
+            #     throw new RuntimeException("Failed to get substring: " + string
+            #             + " start pos: " + position + " end pos: "
+            #             + (endPos + 1), ex);
+            # }
+
+            self.position = endPos + 1
+            self.skipWhitespace()
+
+        else:
+            endPos = self.position
+
+            for endPos in range(endPos, len(self.statement)):
+                char = self.statement[endPos]
+
+                if (char.isspace() or char in ',);'):
+                    break
+
+            if (self.position == endPos):
+                raise Exception("Cannot parse string: %s\nExpected string at position %s" % (self.statement, self.position))
+
+            result = self.statement[self.position: endPos]
+
+            self.position = endPos
+            self.skipWhitespace()
+
+        return result
+
+
     def getExpression(self):
         posEnd = self._getExpressionEnd()
 

@@ -2,7 +2,8 @@ from parser.Parser import Parser, ParserUtils
 from schema.PgFunction import PgFunction, Argument
 
 class CreateFunctionParser(object):
-    def parse(self, database, statement):
+    @staticmethod
+    def parse(database, statement):
         parser = Parser(statement)
         parser.expect("CREATE")
         parser.expectOptional("OR", "REPLACE")
@@ -69,5 +70,5 @@ class CreateFunctionParser(object):
                 break
             else:
                 parser.expect(",")
-        print function
+
         function.body = parser.getRest()
