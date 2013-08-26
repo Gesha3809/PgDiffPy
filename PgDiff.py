@@ -1,5 +1,6 @@
 import argparse
 from loaders.PgDumpLoader import PgDumpLoader
+from diff.PgDiffUtils import PgDiffUtils
 from SearchPathHelper import SearchPathHelper
 from diff.PgDiffTables import PgDiffTables
 from diff.PgDiffTriggers import PgDiffTriggers
@@ -17,7 +18,7 @@ class PgDiff(object):
         self.diffDatabaseSchemas(arguments, oldDatabase, newDatabase)
 
     def diffDatabaseSchemas(self, arguments, oldDatabase, newDatabase):
-        if (arguments.add_transaction):
+        if arguments.add_transaction:
             print "START TRANSACTION;"
 
         if (oldDatabase.comment is None
@@ -25,24 +26,17 @@ class PgDiff(object):
                 or oldDatabase.comment is not None
                 and newDatabase.comment is not None
                 and oldDatabase.comment != newDatabase.comment):
-            print '\n'
-            print "COMMENT ON DATABASE current_database() IS "
-            print newDatabase.comment
-            print ';'
-        elif (oldDatabase.comment is not None
-                and newDatabase.comment is None):
-            print '\n'
-            print "COMMENT ON DATABASE current_database() IS NULL;"
+            print "\nCOMMENT ON DATABASE current_database() IS %s;" % newDatabase.comment
+        elif (oldDatabase.comment is not None and newDatabase.comment is None):
+            print "\nCOMMENT ON DATABASE current_database() IS NULL;"
 
 
         self.dropOldSchemas(oldDatabase, newDatabase)
         self.createNewSchemas(oldDatabase, newDatabase)
         self.updateSchemas(arguments, oldDatabase, newDatabase)
 
-        # if (arguments.isAddTransaction()) {
-        #     writer.println();
-        #     writer.println("COMMIT TRANSACTION;");
-        # }
+        if arguments.add_transaction:
+            print "\nCOMMIT TRANSACTION;"
 
         # if (arguments.isOutputIgnoredStatements()) {
         #     if (!oldDatabase.getIgnoredStatements().isEmpty()) {
@@ -63,8 +57,7 @@ class PgDiff(object):
         #     if (!newDatabase.getIgnoredStatements().isEmpty()) {
         #         writer.println();
         #         writer.print("/* ");
-        #         writer.println(
-        #                 Resources.getString("NewDatabaseIgnoredStatements"));
+        #         writer.println(Resources.getString("NewDatabaseIgnoredStatements"));
 
         #         for (final String statement :
         #                 newDatabase.getIgnoredStatements()) {
@@ -78,8 +71,7 @@ class PgDiff(object):
     def dropOldSchemas(self, oldDatabase, newDatabase):
         for oldSchemaName in oldDatabase.schemas:
             if newDatabase.getSchema(oldSchemaName) is None:
-                print '\n'
-                print "DROP SCHEMA "+ PgDiffUtils.getQuotedName(oldSchema.getName())+ " CASCADE;"
+                print "\nDROP SCHEMA "+ PgDiffUtils.getQuotedName(oldSchema.getName())+ " CASCADE;"
 
     def createNewSchemas(self, oldDatabase, newDatabase):
         for newSchema in newDatabase.schemas:
@@ -99,6 +91,8 @@ class PgDiff(object):
 
             oldSchema = oldDatabase.schemas[newSchemaName]
             newSchema = newDatabase.schemas[newSchemaName]
+            
+            sbSQL = []
 
             if oldSchema is not None:
                 if (oldSchema.comment is None
@@ -106,18 +100,18 @@ class PgDiff(object):
                         or oldSchema.comment is not None
                         and newSchema.comment is not None
                         and oldSchema.comment != newSchema.comment):
-                    print '\n'
-                    print "COMMENT ON SCHEMA "
-                    print PgDiffUtils.getQuotedName(newSchema.name)
-                    print " IS "
-                    print newSchema.comment
-                    print ';'
-                elif (oldSchema.comment is not None
-                        and newSchema.comment is None):
-                    print '\n'
-                    print "COMMENT ON SCHEMA "
-                    print PgDiffUtils.getQuotedName(newSchema.name)
-                    print " IS NULL;"
+                    sbSQL.append("\nCOMMENT ON SCHEMA ")
+                    sbSQL.append(PgDiffUtils.getQuotedName(newSchema.name))
+                    sbSQL.append(" IS ")
+                    sbSQL.append(newSchema.comment)
+                    sbSQL.append(';')                    
+                    print ''.join(sbSQL)
+                    
+                elif (oldSchema.comment is not None and newSchema.comment is None):
+                    sbSQL.append("\nCOMMENT ON SCHEMA ")
+                    sbSQL.append(PgDiffUtils.getQuotedName(newSchema.name))
+                    sbSQL.append(" IS NULL;")                    
+                    print ''.join(sbSQL)
 
 
             PgDiffTriggers.dropTriggers(oldSchema, newSchema, searchPathHelper)
@@ -136,18 +130,18 @@ class PgDiff(object):
             PgDiffTables.alterTables(arguments, oldSchema, newSchema, searchPathHelper)
             PgDiffSequences.alterCreatedSequences(oldSchema, newSchema, searchPathHelper)
             PgDiffFunctions.createFunctions(arguments, oldSchema, newSchema, searchPathHelper)
-            # PgDiffConstraints.createConstraints(oldSchema, newSchema, true, searchPathHelper)
-            # PgDiffConstraints.createConstraints(oldSchema, newSchema, false, searchPathHelper)
-            # PgDiffIndexes.createIndexes(oldSchema, newSchema, searchPathHelper)
+            PgDiffConstraints.createConstraints(oldSchema, newSchema, True, searchPathHelper)
+            PgDiffConstraints.createConstraints(oldSchema, newSchema, False, searchPathHelper)
+            PgDiffIndexes.createIndexes(oldSchema, newSchema, searchPathHelper)
             # PgDiffTables.createClusters(oldSchema, newSchema, searchPathHelper)
-            # PgDiffTriggers.createTriggers(oldSchema, newSchema, searchPathHelper)
-            # PgDiffViews.createViews(oldSchema, newSchema, searchPathHelper)
-            # PgDiffViews.alterViews(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffTriggers.createTriggers(oldSchema, newSchema, searchPathHelper)
+            PgDiffViews.createViews(oldSchema, newSchema, searchPathHelper)
+            PgDiffViews.alterViews(oldSchema, newSchema, searchPathHelper)
 
-            # PgDiffFunctions.alterComments(oldSchema, newSchema, searchPathHelper)
-            # PgDiffConstraints.alterComments(oldSchema, newSchema, searchPathHelper)
-            # PgDiffIndexes.alterComments(oldSchema, newSchema, searchPathHelper)
-            # PgDiffTriggers.alterComments(oldSchema, newSchema, searchPathHelper)
+            PgDiffFunctions.alterComments(oldSchema, newSchema, searchPathHelper)
+            PgDiffConstraints.alterComments(oldSchema, newSchema, searchPathHelper)
+            PgDiffIndexes.alterComments(oldSchema, newSchema, searchPathHelper)
+            PgDiffTriggers.alterComments(oldSchema, newSchema, searchPathHelper)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ from parser.AlterSequenceParser import AlterSequenceParser
 from parser.CreateViewParser import CreateViewParser
 from parser.CreateTriggerParser import CreateTriggerParser
 from parser.AlterViewParser import AlterViewParser
+from parser.CommentParser import CommentParser
 
 class PgDumpLoader(object):
 
@@ -97,6 +98,10 @@ class PgDumpLoader(object):
 
             if self.PATTERN_CREATE_FUNCTION.match(statement):
                 CreateFunctionParser.parse(database, statement)
+                continue
+
+            if self.PATTERN_COMMENT.match(statement):
+                CommentParser.parse(database, statement)
                 continue
 
         return database

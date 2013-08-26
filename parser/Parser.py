@@ -110,7 +110,7 @@ class Parser(object):
                         break
 
 
-            result = self.statement[self.position, endPos + 1]
+            result = self.statement[self.position: endPos + 1]
             # except (final Throwable ex) {
             #     throw new RuntimeException("Failed to get substring: " + string
             #             + " start pos: " + position + " end pos: "
@@ -256,6 +256,49 @@ class ParserUtils(object):
     # Returns object name from optionally schema qualified name.
     @staticmethod
     def getObjectName(name):
-        names = name.split('.')
+        names = ParserUtils.splitNames(name)
 
         return names[len(names) - 1]
+
+    @staticmethod
+    def getSecondObjectName(name):
+        names = ParserUtils.splitNames(name)
+
+        return names[len(names) - 2]
+
+    @staticmethod
+    def getThirdObjectName(name):
+        names = ParserUtils.splitNames(name)
+
+        return names[len(names) - 3] if len(names) >= 3 else None
+
+    @staticmethod
+    def splitNames(string):
+        if string.find('"') == -1:
+            return string.split(".")
+        else:
+            strings = []
+            startPos = 0
+
+            while True:
+                if string[startPos] == '"':
+                    endPos = string.find('"', startPos + 1);
+                    strings.append(string[startPos + 1:endPos])
+
+                    if endPos + 1 == len(string):
+                        break
+                    elif string[endPos + 1] == '.':
+                        startPos = endPos + 2
+                    else:
+                        startPos = endPos + 1
+                else:
+                    endPos = string.find('.', startPos)
+
+                    if endPos == -1:
+                        strings.append(string[startPos:])
+                        break
+                    else:
+                        strings.append(string[startPos:endPos])
+                        startPos = endPos + 1
+
+            return strings

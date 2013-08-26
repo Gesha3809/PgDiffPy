@@ -18,7 +18,6 @@ class CreateFunctionParser(object):
 
         function = PgFunction()
         function.name = ParserUtils.getObjectName(functionName)
-        schema.addFunction(function)
 
         parser.expect("(")
 
@@ -72,3 +71,5 @@ class CreateFunctionParser(object):
                 parser.expect(",")
 
         function.body = parser.getRest()
+
+        schema.addFunction(function)

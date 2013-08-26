@@ -115,8 +115,8 @@ class PgDiffTables(object):
         stats = dict()
 
         for newColumnName in newTable.columns:
-            oldColumn = oldTable.columns[newColumnName]
             newColumn = newTable.columns[newColumnName]
+            oldColumn = oldTable.columns.get(newColumnName)
 
             if oldColumn:
                 oldStat = oldColumn.statistics
@@ -140,8 +140,8 @@ class PgDiffTables(object):
     @staticmethod
     def addAlterStorage(oldTable, newTable, searchPathHelper):
         for newColumnName in newTable.columns:
-            oldColumn = oldTable.columns[newColumnName]
             newColumn = newTable.columns[newColumnName]
+            oldColumn = oldTable.columns.get(newColumnName)
 
             oldStorage = None if (oldColumn is None
                     or oldColumn.storage is None
@@ -179,8 +179,9 @@ class PgDiffTables(object):
 
 
         for newColumnName in newTable.columns:
-            oldColumn = oldTable.columns[newColumnName]
             newColumn = newTable.columns[newColumnName]
+            oldColumn = oldTable.columns.get(newColumnName)
+
             oldComment = None if oldColumn is None else oldColumn.comment
             newComment = newColumn.comment
 

@@ -16,7 +16,7 @@ class PgSchema(object):
         self.tables[table.name] = table
 
     def getTable(self, tablename):
-        return self.tables[tablename]
+        return self.tables.get(tablename)
 
     def addIndex(self, index):
         self.indexes[index.name] = index

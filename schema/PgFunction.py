@@ -7,7 +7,46 @@ class PgFunction(object):
     def __init__(self):
         self.name = ''
         self.arguments = OrderedDict()
+        self.body = None
         self.comment = None
+
+    def __eq__(self, other):
+        return self._equals(other)
+
+    def __ne__(self, other):
+        return not self._equals(other)
+
+    def _equals(self, other):
+        if isinstance(other, PgFunction):
+            if (self.name is None
+                and other.name is not None or self.name is not None
+                and self.name != other.name):
+                return False
+
+            # Do not support whitespaces for now
+            # if (ignoreFunctionWhitespace) {
+            #     thisBody = body.replaceAll("\\s+", " ");
+            #     thatBody =
+            #             function.getBody().replaceAll("\\s+", " ");
+            # } else {
+            selfBody = self.body
+            otherBody = other.body
+
+            if (selfBody is None
+                and otherBody is not None or selfBody is not None
+                and selfBody != otherBody):
+                return False
+
+            if len(self.arguments) != len(other.arguments):
+                return False
+            else:
+                for argumentName, argument in self.arguments.items():
+                    # TODO: Check parameter position, not it's name and presence in dict
+                    if (argument != other.arguments.get(argumentName)):
+                        return False
+            return True
+
+        return False
 
     def addArgument(self, argument):
         self.arguments[argument.name] = argument
@@ -106,6 +145,12 @@ class Argument(object):
         self.name = None
         self.dataType = None
         self.defaultExpression  = None
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return self.__dict__ != other.__dict__
 
     def getDeclaration(self, includeDefaultValue):
             sbSQL = []
