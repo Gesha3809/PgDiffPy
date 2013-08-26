@@ -1,0 +1,91 @@
+from diff.PgDiffUtils import PgDiffUtils
+
+class PgTrigger(object):
+    def __init__(self):
+        self.name = None
+        self.before = True
+        self.onInsert = None
+        self.onUpdate = None
+        self.onDelete = None
+        self.onTruncate = None
+        self.tableName = None
+        self.forEachRow = None
+        self.updateColumns = list()
+        self.when = None
+        self.function = None
+        self.comment = None
+
+    def getCreationSQL(self):
+        sbSQL = []
+        sbSQL.append("CREATE TRIGGER ")
+        sbSQL.append(PgDiffUtils.getQuotedName(self.name))
+        sbSQL.append("\n\t")
+        sbSQL.append("BEFORE" if self.before else "AFTER")
+
+        firstEvent = True
+
+        if self.onInsert:
+            sbSQL.append(" INSERT")
+            firstEvent = False
+
+        if self.onUpdate:
+            if firstEvent:
+                firstEvent = False
+            else:
+                sbSQL.append(" OR")
+
+            sbSQL.append(" UPDATE")
+
+            if len(self.updateColumns) > 0:
+                sbSQL.append(" OF")
+
+                first = True
+
+                for columnName in self.updateColumns:
+                    if first:
+                        first = False
+                    else:
+                        sbSQL.append(',')
+
+                    sbSQL.append(' ')
+                    sbSQL.append(self.columnName)
+
+        if self.onDelete:
+            if not firstEvent:
+                sbSQL.append(" OR")
+
+            sbSQL.append(" DELETE")
+
+        if self.onTruncate:
+            if not firstEvent:
+                sbSQL.append(" OR")
+
+            sbSQL.append(" TRUNCATE")
+
+        sbSQL.append(" ON ")
+        sbSQL.append(PgDiffUtils.getQuotedName(self.tableName))
+        sbSQL.append("\n\tFOR EACH ")
+        sbSQL.append("ROW" if self.forEachRow else "STATEMENT")
+
+        if (self.when is not None and len(self.when) > 0):
+            sbSQL.append("\n\tWHEN (")
+            sbSQL.append(self.when)
+            sbSQL.append(')')
+
+        sbSQL.append("\n\tEXECUTE PROCEDURE ")
+        sbSQL.append(self.function)
+        sbSQL.append(';')
+
+        if (self.comment is not None and len(self.comment) > 0):
+            sbSQL.append("\n\nCOMMENT ON TRIGGER ")
+            sbSQL.append(PgDiffUtils.getQuotedName(self.name))
+            sbSQL.append(" ON ")
+            sbSQL.append(PgDiffUtils.getQuotedName(self.tableName))
+            sbSQL.append(" IS ")
+            sbSQL.append(self.comment)
+            sbSQL.append(';')
+
+        return ''.join(sbSQL)
+
+    def getDropSQL(self):
+        return "DROP TRIGGER %s ON %s;" % (PgDiffUtils.getQuotedName(self.name), PgDiffUtils.getQuotedName(self.tableName))
