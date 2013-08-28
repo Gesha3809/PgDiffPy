@@ -53,7 +53,7 @@ class PgTrigger(object):
                         sbSQL.append(',')
 
                     sbSQL.append(' ')
-                    sbSQL.append(self.columnName)
+                    sbSQL.append(columnName)
 
         if self.onDelete:
             if not firstEvent:

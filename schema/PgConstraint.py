@@ -21,7 +21,9 @@ class PgConstraint(object):
         return not self.__equal(other)
 
     def isPrimaryKeyConstraint(self):
-        return self.PATTERN_PRIMARY_KEY.search(self.definition) is not None
+        if self.definition:
+            return self.PATTERN_PRIMARY_KEY.search(self.definition) is not None
+        return False
 
     def getCreationSQL(self):
         sbSQL = []
