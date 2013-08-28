@@ -14,9 +14,11 @@ class CreateTriggerParser(object):
         trigger.name = objectName
 
         if parser.expectOptional("BEFORE"):
-            trigger.before = True
+            trigger.event = PgTrigger.EVENT_BEFORE
         elif parser.expectOptional("AFTER"):
-            trigger.before = False
+            trigger.event = PgTrigger.EVENT_AFTER
+        elif parser.expectOptional("INSTEAD OF"):
+            trigger.event = PgTrigger.EVENT_INSTEAD_OF
 
         first = True
 
@@ -47,9 +49,7 @@ class CreateTriggerParser(object):
 
         parser.expect("ON")
 
-        tableName = parser.parseIdentifier()
-
-        trigger.tableName = ParserUtils.getObjectName(tableName)
+        trigger.tableName = ParserUtils.getObjectName(parser.parseIdentifier())
 
         if parser.expectOptional("FOR"):
             parser.expectOptional("EACH")
@@ -72,5 +72,15 @@ class CreateTriggerParser(object):
         ignoreSlonyTrigger = ignoreSlonyTriggers and ("_slony_logtrigger" == trigger.name or "_slony_denyaccess" == trigger.name)
 
         if (not ignoreSlonyTrigger):
-            tableSchema = database.getSchema(ParserUtils.getSchemaName(tableName, database))
-            tableSchema.getTable(trigger.tableName).addTrigger(trigger)
+            schema = database.getSchema(ParserUtils.getSchemaName(trigger.tableName, database))
+            container = schema.tables.get(trigger.tableName)
+            if not container:
+                container = schema.views.get(trigger.tableName)
+
+            if container:
+                container.triggers[trigger.name] = trigger
+            else:
+                raise Exception()
+
+             
+

@@ -1,9 +1,14 @@
 from diff.PgDiffUtils import PgDiffUtils
 
 class PgTrigger(object):
+
+    EVENT_BEFORE = 'BEFORE'
+    EVENT_AFTER = 'AFTER'
+    EVENT_INSTEAD_OF = 'INSTEAD OF'
+
     def __init__(self):
         self.name = None
-        self.before = True
+        self.event = None
         self.onInsert = None
         self.onUpdate = None
         self.onDelete = None
@@ -20,7 +25,7 @@ class PgTrigger(object):
         sbSQL.append("CREATE TRIGGER ")
         sbSQL.append(PgDiffUtils.getQuotedName(self.name))
         sbSQL.append("\n\t")
-        sbSQL.append("BEFORE" if self.before else "AFTER")
+        sbSQL.append(self.event)
 
         firstEvent = True
 

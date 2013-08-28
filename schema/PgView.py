@@ -6,6 +6,7 @@ class PgView(object):
         self.comment = None
         self.columnNames = None
         self.defaultValues = dict()
+        self.triggers=dict()
         self.columnComments = dict()
         self.query = None
 

@@ -85,7 +85,7 @@ class PgDiff(object):
 
         for newSchemaName in newDatabase.schemas:
             if setSearchPath:
-                searchPathHelper = SearchPathHelper("SET search_path = %s, pg_catalog;" % PgDiffUtils.getQuotedName(newSchemaName, true))
+                searchPathHelper = SearchPathHelper("SET search_path = %s, pg_catalog;" % PgDiffUtils.getQuotedName(newSchemaName, True))
             else:
                 searchPathHelper = SearchPathHelper(None)
 
