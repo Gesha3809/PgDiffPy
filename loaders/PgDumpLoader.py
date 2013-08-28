@@ -1,4 +1,5 @@
 import sqlparse, re
+from parser.CreateSchemaParser import CreateSchemaParser
 from schema.PgDatabase import PgDatabase
 from parser.CreateTableParser import  CreateTableParser
 from parser.AlterTableParser import AlterTableParser
@@ -46,69 +47,69 @@ class PgDumpLoader(object):
     # Pattern for testing whether it is COMMENT statement.
     PATTERN_COMMENT = re.compile("^COMMENT[\s]+ON[\s]+.*$", re.I | re.S)
 
-
-    def loadDatabaseSchema(self, dumpFileName, ignoreSlonyTriggers = False):
+    @staticmethod
+    def loadDatabaseSchema(dumpFileName, ignoreSlonyTriggers = False):
         database = PgDatabase()
 
         print "Loading file dump: %s\n" % dumpFileName
 
         statements = sqlparse.split(open(dumpFileName,'r'))
         for statement in statements:
-            statement = self.stripComment(statement).strip()
-            if self.PATTERN_CREATE_SCHEMA.match(statement):
-                print 'createSchema'
+            statement = PgDumpLoader.stripComment(statement).strip()
+            if PgDumpLoader.PATTERN_CREATE_SCHEMA.match(statement):
+                CreateSchemaParser.parse(database, statement)
                 continue
 
-            match = self.PATTERN_DEFAULT_SCHEMA.match(statement)
+            match = PgDumpLoader.PATTERN_DEFAULT_SCHEMA.match(statement)
             if match:
                 database.setDefaultSchema(match.group(1))
                 continue
 
-            if self.PATTERN_CREATE_TABLE.match(statement):
+            if PgDumpLoader.PATTERN_CREATE_TABLE.match(statement):
                 CreateTableParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_ALTER_TABLE.match(statement):
+            if PgDumpLoader.PATTERN_ALTER_TABLE.match(statement):
                 AlterTableParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_CREATE_SEQUENCE.match(statement):
+            if PgDumpLoader.PATTERN_CREATE_SEQUENCE.match(statement):
                 CreateSequenceParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_ALTER_SEQUENCE.match(statement):
+            if PgDumpLoader.PATTERN_ALTER_SEQUENCE.match(statement):
                 AlterSequenceParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_CREATE_INDEX.match(statement):
+            if PgDumpLoader.PATTERN_CREATE_INDEX.match(statement):
                 CreateIndexParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_CREATE_VIEW.match(statement):
+            if PgDumpLoader.PATTERN_CREATE_VIEW.match(statement):
                 CreateViewParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_ALTER_VIEW.match(statement):
+            if PgDumpLoader.PATTERN_ALTER_VIEW.match(statement):
                 AlterViewParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_CREATE_TRIGGER.match(statement):
+            if PgDumpLoader.PATTERN_CREATE_TRIGGER.match(statement):
                 CreateTriggerParser.parse(database, statement, ignoreSlonyTriggers)
                 continue
 
-            if self.PATTERN_CREATE_FUNCTION.match(statement):
+            if PgDumpLoader.PATTERN_CREATE_FUNCTION.match(statement):
                 CreateFunctionParser.parse(database, statement)
                 continue
 
-            if self.PATTERN_COMMENT.match(statement):
+            if PgDumpLoader.PATTERN_COMMENT.match(statement):
                 CommentParser.parse(database, statement)
                 continue
 
         return database
 
 
-
-    def stripComment(self, statement):
+    @staticmethod
+    def stripComment(statement):
         start = statement.find("--")
 
         while start>=0:

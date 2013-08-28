@@ -12,8 +12,8 @@ from diff.PgDiffFunctions import PgDiffFunctions
 
 class PgDiff(object):
     def createDiff(self, arguments):
-        oldDatabase = PgDumpLoader().loadDatabaseSchema(arguments.new_dump)
-        newDatabase = PgDumpLoader().loadDatabaseSchema(arguments.old_dump)
+        oldDatabase = PgDumpLoader.loadDatabaseSchema(arguments.new_dump)
+        newDatabase = PgDumpLoader.loadDatabaseSchema(arguments.old_dump)
 
         self.diffDatabaseSchemas(arguments, oldDatabase, newDatabase)
 

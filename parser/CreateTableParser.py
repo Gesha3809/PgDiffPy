@@ -13,7 +13,7 @@ class CreateTableParser(object):
         # Optional IF NOT EXISTS, irrelevant for our purposes
         parser.expectOptional("IF", "NOT", "EXISTS")
 
-        tableName = parser.parseIdentifier()
+        tableName = ParserUtils.getObjectName(parser.parseIdentifier())
         table = PgTable(tableName)
         # Figure it out why do we need this
         schemaName = ParserUtils.getSchemaName(tableName, database)

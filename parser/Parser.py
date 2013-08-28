@@ -245,11 +245,10 @@ class Parser(object):
 class ParserUtils(object):
     @staticmethod
     def getSchemaName(name, database):
-        # names = splitNames(name);
-        names = name.split('.')
+        names = ParserUtils.splitNames(name)
 
         if len(names) < 2:
-            return database.getDefaultSchema().getName();
+            return database.defaultSchema.name
         else:
             return names[0]
 
@@ -297,7 +296,7 @@ class ParserUtils(object):
                     if endPos == -1:
                         strings.append(string[startPos:])
                         break
-                    else:
+                    else:                        
                         strings.append(string[startPos:endPos])
                         startPos = endPos + 1
 
