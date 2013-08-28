@@ -42,18 +42,9 @@ class PgTrigger(object):
             sbSQL.append(" UPDATE")
 
             if len(self.updateColumns) > 0:
-                sbSQL.append(" OF")
+                sbSQL.append(" OF ")
 
-                first = True
-
-                for columnName in self.updateColumns:
-                    if first:
-                        first = False
-                    else:
-                        sbSQL.append(',')
-
-                    sbSQL.append(' ')
-                    sbSQL.append(columnName)
+                sbSQL.append(', '.join(self.updateColumns))
 
         if self.onDelete:
             if not firstEvent:
