@@ -57,39 +57,23 @@ class PgFunction(object):
         sbSQL.append(PgDiffUtils.getQuotedName(self.name))
         sbSQL.append('(')
 
-        addComma = False
-
-        for argumentName, argument in self.arguments.items():
-            if addComma:
-                sbSQL.append(", ")
-
-            sbSQL.append(argument.getDeclaration(True))
-
-            addComma = True
+        argumentsString = ', '.join([argument.getDeclaration(True) for argument in self.arguments.values()])
+        sbSQL.append(argumentsString)
 
         sbSQL.append(") ")
         sbSQL.append(self.body)
-        sbSQL.append(';')
 
         if self.comment is not None and len(comment) > 0:
             sbSQL.append("\n\nCOMMENT ON FUNCTION ")
             sbSQL.append(PgDiffUtils.getQuotedName(self.name))
             sbSQL.append('(')
 
-            addComma = False
-
-            for argument in self.arguments.items():
-                if addComma:
-                    sbSQL.append(", ")
-
-                sbSQL.append(argument.getDeclaration(False))
-
-                addComma = True
+            sbSQL.append(argumentsString)
 
             sbSQL.append(") IS ")
             sbSQL.append(self.comment)
-            sbSQL.append(';')
 
+        sbSQL.append(';\n')
         return ''.join(sbSQL)
 
 

@@ -84,4 +84,4 @@ class PgTrigger(object):
         return ''.join(sbSQL)
 
     def getDropSQL(self):
-        return "DROP TRIGGER %s ON %s;" % (PgDiffUtils.getQuotedName(self.name), PgDiffUtils.getQuotedName(self.tableName))
+        return "DROP TRIGGER %s ON %s;\n" % (PgDiffUtils.getQuotedName(self.name), PgDiffUtils.getQuotedName(self.tableName))

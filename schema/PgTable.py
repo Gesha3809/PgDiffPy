@@ -114,7 +114,7 @@ class PgTable(object):
         return ''.join(sbSQL)
 
     def getDropSQL(self):
-        return "DROP TABLE %s;" % PgDiffUtils.getQuotedName(self.name)
+        return "DROP TABLE %s;\n" % PgDiffUtils.getQuotedName(self.name)
 
     def getColumnsWithStatistics(self):
         return [column for columnName, column in self.columns.items() if column.statistics is not None]
