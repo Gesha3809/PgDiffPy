@@ -38,7 +38,7 @@ class TestParser(unittest.TestCase):
 		self.assertFalse(self.parser.expectOptional("NOT","EXPECTED","WORDS"))
 
 	def test_one_not_expectOptional_word(self):
-		self.assertRaises(self.parser.expectOptional("WRONG", "STATEMENT","FOR","TEST"))
+		self.assertRaises(Exception, self.parser.expectOptional, ("WRONG", "STATEMENT","FOR","TEST"))
 
 	def test_first_fine_other_not_expectOptional_word(self):
 		self.assertRaises(Exception, self.parser.expectOptional, ("STATEMENT","WRONG","FOR","TEST"))
