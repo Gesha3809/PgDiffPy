@@ -156,4 +156,7 @@ if __name__ == "__main__":
 
     arguments = parser.parse_args()
 
-    PgDiff().createDiff(arguments)
+    try:
+        PgDiff().createDiff(arguments)
+    except Exception as e:
+        print('Error: %s' % e)

@@ -3,12 +3,15 @@ class Parser(object):
         self.position=0
         self.statement = statement
 
+    # Checks whether the string contains given word on current position. If not
+    # then throws an exception.
     def expect(self, *words):
         for word in words:
             self._expect(word, False)
 
     # Checks whether string contains at current position sequence of the words.
-    # Return true if whole sequence was found, otherwise false
+    # Return True if whole sequence was found, raise Exception if first 
+    # statement was found but other were not found, otherwise False
     def expectOptional(self, *words):
         found =  self._expect(words[0], True)
 
@@ -203,15 +206,15 @@ class Parser(object):
     def _expect(self, word, isoptional):
         wordEnd = self.position + len(word)
 
-        if wordEnd <= len(self.statement):
-            if (self.statement[self.position:wordEnd].lower() == word.lower()):
+        if wordEnd <= len(self.statement):            
+            if(self.statement[self.position:wordEnd].lower() == word.lower()):
 
                 #if(wordEnd == len(word) or self.statement[wordEnd].isspace() or self.statement[wordEnd] in ";),[" or word in "(,[]"):
                 self.position = wordEnd
-                self.skipWhitespace()
+                self.skipWhitespace()                
                 return True
 
-        if (isoptional):
+        if isoptional:
             return False
 
         # Throw Exception CannotParseStringExpectedWord
