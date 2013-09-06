@@ -3,26 +3,25 @@ from PgDiffUtils import PgDiffUtils
 class PgDiffTables(object):
 
     @staticmethod
-    def createTables(oldSchema, newSchema, searchPathHelper):
+    def createTables(writer, oldSchema, newSchema, searchPathHelper):
         for tableName in newSchema.tables:
             if (oldSchema is None or tableName not in oldSchema.tables):
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % newSchema.tables[tableName].getCreationSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(newSchema.tables[tableName].getCreationSQL())
 
     @staticmethod
-    def dropTables(oldSchema, newSchema, searchPathHelper):
+    def dropTables(writer, oldSchema, newSchema, searchPathHelper):
         if oldSchema is None:
             return
 
         for tableName in oldSchema.tables:
             if tableName not in newSchema.tables:
-                searchPathHelper.outputSearchPath()
-                print '\n'
-                print oldSchema.tables[tableName].getDropSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(oldSchema.tables[tableName].getDropSQL())
 
 
     @staticmethod
-    def alterTables(arguments, oldSchema, newSchema, searchPathHelper):
+    def alterTables(writer, arguments, oldSchema, newSchema, searchPathHelper):
         for newTablename in newSchema.tables:
             if oldSchema is None or newTablename not in oldSchema.tables:
                 continue
@@ -30,16 +29,16 @@ class PgDiffTables(object):
             oldTable = oldSchema.tables[newTablename]
             newTable = newSchema.tables[newTablename]
 
-            PgDiffTables.updateTableColumns(arguments, oldTable, newTable, searchPathHelper)
-            PgDiffTables.checkWithOIDS(oldTable, newTable, searchPathHelper)
-            PgDiffTables.checkInherits(oldTable, newTable, searchPathHelper)
-            PgDiffTables.checkTablespace(oldTable, newTable, searchPathHelper)
-            PgDiffTables.addAlterStatistics(oldTable, newTable, searchPathHelper)
-            PgDiffTables.addAlterStorage(oldTable, newTable, searchPathHelper)
-            PgDiffTables.alterComments(oldTable, newTable, searchPathHelper)
+            PgDiffTables.updateTableColumns(writer, arguments, oldTable, newTable, searchPathHelper)
+            PgDiffTables.checkWithOIDS(writer, oldTable, newTable, searchPathHelper)
+            PgDiffTables.checkInherits(writer, oldTable, newTable, searchPathHelper)
+            PgDiffTables.checkTablespace(writer, oldTable, newTable, searchPathHelper)
+            PgDiffTables.addAlterStatistics(writer, oldTable, newTable, searchPathHelper)
+            PgDiffTables.addAlterStorage(writer, oldTable, newTable, searchPathHelper)
+            PgDiffTables.alterComments(writer, oldTable, newTable, searchPathHelper)
 
     @staticmethod
-    def updateTableColumns(arguments, oldTable, newTable, searchPathHelper):
+    def updateTableColumns(writer, arguments, oldTable, newTable, searchPathHelper):
         statements = []
         dropDefaultsColumns = []
 
@@ -49,68 +48,81 @@ class PgDiffTables(object):
 
         if len(statements):
             quotedTableName = PgDiffUtils.getQuotedName(newTable.name)
-            searchPathHelper.outputSearchPath()
-            print "ALTER TABLE %s" % quotedTableName
-
-            print "%s;" % ",".join(statements)
+            searchPathHelper.outputSearchPath(writer)
+            writer.write("ALTER TABLE ")
+            writer.write(quotedTableName)
+            writer.write(",".join(statements))
+            writer.writeln(";")
 
             # Still test needed
             if len(dropDefaultsColumns):
-                print "ALTER TABLE " + quotedTableName
+                writer.write("ALTER TABLE ")
+                writer.writeln(quotedTableName)
 
                 _printStatements = []
                 for dropDefaultsColumn in dropDefaultsColumns:
                     _printStatements.append("\tALTER COLUMN %s DROP DEFAULT" % PgDiffUtils.getQuotedName(dropDefaultsColumn.name))
 
-                print "%s;" % ",".join(_printStatements)
+                writer.write(",".join(_printStatements))
+                writer.writeln(";")
 
     @staticmethod
-    def checkWithOIDS(oldTable, newTable, searchPathHelper):
+    def checkWithOIDS(writer, oldTable, newTable, searchPathHelper):
         if (oldTable.oids is None and newTable.oids is None
                 or oldTable.oids is not None
                 and oldTable.oids == newTable.oids):
             return
 
-        searchPathHelper.outputSearchPath()
-        print "\n"
-        print "\nALTER TABLE %s" % PgDiffUtils.getQuotedName(newTable.name)
+        searchPathHelper.outputSearchPath(writer)
+        writer.write("ALTER TABLE ")
+        writer.writeln(PgDiffUtils.getQuotedName(newTable.name))
 
         if newTable.oids in (None, "OIDS=false"):
-            print "\tSET WITHOUT OIDS;"
+            writer.write("\tSET WITHOUT OIDS;")
         elif newTable.oids in ("OIDS", "OIDS=true"):
-            print "\tSET WITH OIDS;"
+            writer.write("\tSET WITH OIDS;")
         else:
-            print "\tSET %s;" % newTable.oids
+            writer.write("\tSET ")
+            writer.write(newTable.oids)
+            writer.writeln(";")
 
     @staticmethod
-    def checkInherits(oldTable, newTable, searchPathHelper):
+    def checkInherits(writer, oldTable, newTable, searchPathHelper):
 
         for oldTableName in oldTable.inherits:
             if oldTableName not in newTable.inherits:
-                searchPathHelper.outputSearchPath()
-                print '\n'
-                print "ALTER TABLE %s\tNO INHERIT %s;" % (PgDiffUtils.getQuotedName(newTable.name), PgDiffUtils.getQuotedName(oldTableName))
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("ALTER TABLE ")
+                writer.writeln(PgDiffUtils.getQuotedName(newTable.name))
+                writer.write("\tNO INHERIT ")
+                writer.write(PgDiffUtils.getQuotedName(oldTableName))
+                writer.writeln(";")
 
         for newTableName in newTable.inherits:
             if newTableName not in oldTable.inherits:
-                searchPathHelper.outputSearchPath()
-                print '\n'
-                print "ALTER TABLE %s\tINHERIT %s;" % (PgDiffUtils.getQuotedName(newTable.name), PgDiffUtils.getQuotedName(newTableName))
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("ALTER TABLE ")
+                writer.writeln(PgDiffUtils.getQuotedName(newTable.name))
+                writer.write("\tINHERIT ")
+                writer.write(PgDiffUtils.getQuotedName(newTableName))
+                writer.writeln(";")
 
     @staticmethod
-    def checkTablespace(oldTable, newTable, searchPathHelper):
+    def checkTablespace(writer, oldTable, newTable, searchPathHelper):
         if (oldTable.tablespace is None and newTable.tablespace is None
                 or oldTable.tablespace is not None
                 and oldTable.tablespace == newTable.tablespace):
             return
 
-        searchPathHelper.outputSearchPath()
-        print '\n'
-        print "ALTER TABLE %s\tTABLESPACE %s" % (PgDiffUtils.getQuotedName(newTable.name), newTable.tablespace)
-
+        searchPathHelper.outputSearchPath(writer)
+        writer.write("ALTER TABLE ")
+        writer.writeln(PgDiffUtils.getQuotedName(newTable.name))
+        writer.write("\tTABLESPACE ")
+        writer.write(newTable.tablespace)
+        writer.writeln(";")
 
     @staticmethod
-    def addAlterStatistics(oldTable, newTable, searchPathHelper):
+    def addAlterStatistics(writer, oldTable, newTable, searchPathHelper):
         # final Map<String, Integer> stats = new HashMap<String, Integer>();
         stats = dict()
 
@@ -133,12 +145,17 @@ class PgDiffTables(object):
                     stats[newColumn.name] = newStatValue
 
         for columnName in stats:
-            searchPathHelper.outputSearchPath()
-            print '\n'
-            print "ALTER TABLE ONLY %s ALTER COLUMN %s SET STATISTICS %s;" % (PgDiffUtils.getQuotedName(newTable.name), PgDiffUtils.getQuotedName(columnName), stats[columnName])
+            searchPathHelper.outputSearchPath(writer)
+            writer.write("ALTER TABLE ONLY ")
+            writer.write(PgDiffUtils.getQuotedName(newTable.name))
+            writer.write(" ALTER COLUMN ")
+            writer.write(PgDiffUtils.getQuotedName(columnName))
+            writer.write(" SET STATISTICS ")
+            writer.write(stats[columnName])
+            writer.write(";")
 
     @staticmethod
-    def addAlterStorage(oldTable, newTable, searchPathHelper):
+    def addAlterStorage(writer, oldTable, newTable, searchPathHelper):
         for newColumnName in newTable.columns:
             newColumn = newTable.columns[newColumnName]
             oldColumn = oldTable.columns.get(newColumnName)
@@ -150,33 +167,45 @@ class PgDiffTables(object):
                     or newColumn.storage == '') else newColumn.storage
 
             if (newStorage is None and oldStorage is not None):
-                searchPathHelper.outputSearchPath()
-                print '\n'
-                print "WARNING: Column %s.%s in new table has no STORAGE set but in old table storage was set. Unable to determine STORAGE type." % (newTable.name, newColumn.name)
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("WARNING: Column ")
+                writer.write(newTable.name)
+                writer.write(".")
+                writer.write(newColumn.name)
+                writer.writeln(" in new table has no STORAGE set but in old table storage was set. Unable to determine STORAGE type.")
                 continue
 
             if (newStorage is None or newStorage == oldStorage):
                 continue
 
-            searchPathHelper.outputSearchPath()
-            print '\n'
-            print "ALTER TABLE ONLY %s ALTER COLUMN %s SET STORAGE %s;" % (PgDiffUtils.getQuotedName(newTable.name), PgDiffUtils.getQuotedName(newColumn.name), newStorage)
+            searchPathHelper.outputSearchPath(writer)
+            writer.write("ALTER TABLE ONLY ")
+            writer.write(PgDiffUtils.getQuotedName(newTable.name))
+            writer.write(" ALTER COLUMN ")
+            writer.write(PgDiffUtils.getQuotedName(newColumn.name))
+            writer.write(" SET STORAGE ")
+            writer.write(newStorage)
+            writer.write(";")
 
     @staticmethod
-    def alterComments(oldTable, newTable, searchPathHelper):
+    def alterComments(writer, oldTable, newTable, searchPathHelper):
         if (oldTable.comment is None
                 and newTable.comment is not None
                 or oldTable.comment is not None
                 and newTable.comment is not None
                 and oldTable.comment != newTable.comment):
-            searchPathHelper.outputSearchPath()
-            print '\n'
-            print "COMMENT ON TABLE %s IS %s;" % (PgDiffUtils.getQuotedName(newTable.name), newTable.comment)
-        elif (oldTable.comment is not None and newTable.comment is None):
-            searchPathHelper.outputSearchPath()
-            print '\n'
-            print "COMMENT ON TABLE %s IS NULL;" % PgDiffUtils.getQuotedName(newTable.name)
+            searchPathHelper.outputSearchPath(writer)
+            writer.write("COMMENT ON TABLE ")
+            writer.write(PgDiffUtils.getQuotedName(newTable.name))
+            writer.write(" IS ")
+            writer.write(newTable.comment)
+            writer.writeln(";")
 
+        elif (oldTable.comment is not None and newTable.comment is None):
+            searchPathHelper.outputSearchPath(writer)
+            writer.write("COMMENT ON TABLE ")
+            writer.write(PgDiffUtils.getQuotedName(newTable.name))
+            writer.writeln(" IS NULL;")
 
         for newColumnName in newTable.columns:
             newColumn = newTable.columns[newColumnName]
@@ -186,13 +215,22 @@ class PgDiffTables(object):
             newComment = newColumn.comment
 
             if (newComment is not None and (newComment is not None if oldComment is None else oldComment != newComment)):
-                searchPathHelper.outputSearchPath()
-                print '\n'
-                print "COMMENT ON COLUMN %s.%s IS %s;" % (PgDiffUtils.getQuotedName(newTable.name), PgDiffUtils.getQuotedName(newColumn.name), newColumn.comment)
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("COMMENT ON COLUMN ")
+                writer.write(PgDiffUtils.getQuotedName(newTable.name))
+                writer.write(".")
+                writer.write(PgDiffUtils.getQuotedName(newColumn.name))
+                writer.write(" IS ")
+                writer.write(newColumn.comment)
+                writer.writeln(";")
             elif (oldComment is not None and newComment is None):
-                searchPathHelper.outputSearchPath()
-                print '\n'
-                print "COMMENT ON COLUMN %s.%s IS NULL;" % (PgDiffUtils.getQuotedName(newTable.name), PgDiffUtils.getQuotedName(newColumn.name))
+                searchPathHelper.outputSearchPath(writer)
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("COMMENT ON COLUMN ")
+                writer.write(PgDiffUtils.getQuotedName(newTable.name))
+                writer.write(".")
+                writer.write(PgDiffUtils.getQuotedName(newColumn.name))
+                writer.writeln(" IS NULL;")
 
     @staticmethod
     def addDropTableColumns(statements, oldTable, newTable):

@@ -1,4 +1,5 @@
 import argparse
+from helpers.Writer import Writer
 from loaders.PgDumpLoader import PgDumpLoader
 from diff.PgDiffUtils import PgDiffUtils
 from SearchPathHelper import SearchPathHelper
@@ -11,32 +12,37 @@ from diff.PgDiffSequences import PgDiffSequences
 from diff.PgDiffFunctions import PgDiffFunctions
 
 class PgDiff(object):
-    def createDiff(self, arguments):
-        oldDatabase = PgDumpLoader.loadDatabaseSchema(arguments.new_dump)
-        newDatabase = PgDumpLoader.loadDatabaseSchema(arguments.old_dump)
 
-        self.diffDatabaseSchemas(arguments, oldDatabase, newDatabase)
+    @staticmethod
+    def createDiff(writer, arguments):
+        oldDatabase = PgDumpLoader.loadDatabaseSchema(arguments.old_dump)
+        newDatabase = PgDumpLoader.loadDatabaseSchema(arguments.new_dump)
 
-    def diffDatabaseSchemas(self, arguments, oldDatabase, newDatabase):
+        PgDiff.diffDatabaseSchemas(writer, arguments, oldDatabase, newDatabase)
+
+    @staticmethod
+    def diffDatabaseSchemas(writer, arguments, oldDatabase, newDatabase):
         if arguments.add_transaction:
-            print "START TRANSACTION;"
+            writer.writeln("START TRANSACTION;")
 
         if (oldDatabase.comment is None
                 and newDatabase.comment is not None
                 or oldDatabase.comment is not None
                 and newDatabase.comment is not None
                 and oldDatabase.comment != newDatabase.comment):
-            print "\nCOMMENT ON DATABASE current_database() IS %s;" % newDatabase.comment
+            writer.write("COMMENT ON DATABASE current_database() IS ")
+            writer.write(newDatabase.comment)
+            writer.writeln(";")
         elif (oldDatabase.comment is not None and newDatabase.comment is None):
-            print "\nCOMMENT ON DATABASE current_database() IS NULL;"
+            writer.writeln("COMMENT ON DATABASE current_database() IS NULL;")
 
 
-        self.dropOldSchemas(oldDatabase, newDatabase)
-        self.createNewSchemas(oldDatabase, newDatabase)
-        self.updateSchemas(arguments, oldDatabase, newDatabase)
+        PgDiff.dropOldSchemas(writer, oldDatabase, newDatabase)
+        PgDiff.createNewSchemas(writer, oldDatabase, newDatabase)
+        PgDiff.updateSchemas(writer, arguments, oldDatabase, newDatabase)
 
         if arguments.add_transaction:
-            print "\nCOMMIT TRANSACTION;"
+            writer.writeln("COMMIT TRANSACTION;")
 
         # if (arguments.isOutputIgnoredStatements()) {
         #     if (!oldDatabase.getIgnoredStatements().isEmpty()) {
@@ -68,18 +74,21 @@ class PgDiff(object):
         #         writer.println("*/");
         #     }
         # }
-    def dropOldSchemas(self, oldDatabase, newDatabase):
+
+    @staticmethod
+    def dropOldSchemas(writer, oldDatabase, newDatabase):
         for oldSchemaName in oldDatabase.schemas:
             if newDatabase.getSchema(oldSchemaName) is None:
-                print "\nDROP SCHEMA "+ PgDiffUtils.getQuotedName(oldSchema.getName())+ " CASCADE;"
+                writer.writeln("DROP SCHEMA "+ PgDiffUtils.getQuotedName(oldSchema.getName())+ " CASCADE;")
 
-    def createNewSchemas(self, oldDatabase, newDatabase):
+    @staticmethod
+    def createNewSchemas(writer, oldDatabase, newDatabase):
         for newSchema in newDatabase.schemas:
             if newDatabase.getSchema(newSchema) is None:
-                print '\n'
-                print newSchema.getCreationSQL()
+                writer.writeln(newSchema.getCreationSQL())
 
-    def updateSchemas(self, arguments, oldDatabase, newDatabase):
+    @staticmethod
+    def updateSchemas(writer, arguments, oldDatabase, newDatabase):
         # We set search path if more than one schemas or it's name is not public
         setSearchPath = len(newDatabase.schemas) > 1 or newDatabase.schemas.itervalues().next().name != "public"
 
@@ -91,8 +100,6 @@ class PgDiff(object):
 
             oldSchema = oldDatabase.schemas[newSchemaName]
             newSchema = newDatabase.schemas[newSchemaName]
-            
-            sbSQL = []
 
             if oldSchema is not None:
                 if (oldSchema.comment is None
@@ -100,52 +107,49 @@ class PgDiff(object):
                         or oldSchema.comment is not None
                         and newSchema.comment is not None
                         and oldSchema.comment != newSchema.comment):
-                    sbSQL.append("\nCOMMENT ON SCHEMA ")
-                    sbSQL.append(PgDiffUtils.getQuotedName(newSchema.name))
-                    sbSQL.append(" IS ")
-                    sbSQL.append(newSchema.comment)
-                    sbSQL.append(';')                    
-                    print ''.join(sbSQL)
-                    
+                    writer.write("COMMENT ON SCHEMA ")
+                    writer.write(PgDiffUtils.getQuotedName(newSchema.name))
+                    writer.write(" IS ")
+                    writer.write(newSchema.comment)
+                    writer.writeln(';')
+
                 elif (oldSchema.comment is not None and newSchema.comment is None):
-                    sbSQL.append("\nCOMMENT ON SCHEMA ")
-                    sbSQL.append(PgDiffUtils.getQuotedName(newSchema.name))
-                    sbSQL.append(" IS NULL;")                    
-                    print ''.join(sbSQL)
+                    writer.write("COMMENT ON SCHEMA ")
+                    writer.write(PgDiffUtils.getQuotedName(newSchema.name))
+                    writer.writeln(" IS NULL;")
 
+            PgDiffTriggers.dropTriggers(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffFunctions.dropFunctions(writer, arguments, oldSchema, newSchema, searchPathHelper)
+            PgDiffViews.dropViews(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffConstraints.dropConstraints(writer, oldSchema, newSchema, True, searchPathHelper)
+            PgDiffConstraints.dropConstraints(writer, oldSchema, newSchema, False, searchPathHelper)
+            PgDiffIndexes.dropIndexes(writer, oldSchema, newSchema, searchPathHelper)
+            # # PgDiffTables.dropClusters(oldSchema, newSchema, searchPathHelper)
+            PgDiffTables.dropTables(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.dropSequences(writer, oldSchema, newSchema, searchPathHelper)
 
-            PgDiffTriggers.dropTriggers(oldSchema, newSchema, searchPathHelper)
-            PgDiffFunctions.dropFunctions(arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffViews.dropViews(oldSchema, newSchema, searchPathHelper)
-            PgDiffConstraints.dropConstraints(oldSchema, newSchema, True, searchPathHelper)
-            PgDiffConstraints.dropConstraints(oldSchema, newSchema, False, searchPathHelper)
-            PgDiffIndexes.dropIndexes(oldSchema, newSchema, searchPathHelper)
-            # PgDiffTables.dropClusters(oldSchema, newSchema, searchPathHelper)
-            PgDiffTables.dropTables(oldSchema, newSchema, searchPathHelper)
-            PgDiffSequences.dropSequences(oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.createSequences(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.alterSequences(writer, arguments, oldSchema, newSchema, searchPathHelper)
+            PgDiffTables.createTables(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffTables.alterTables(writer, arguments, oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.alterCreatedSequences(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffFunctions.createFunctions(writer, arguments, oldSchema, newSchema, searchPathHelper)
+            PgDiffConstraints.createConstraints(writer, oldSchema, newSchema, True, searchPathHelper)
+            PgDiffConstraints.createConstraints(writer, oldSchema, newSchema, False, searchPathHelper)
+            PgDiffIndexes.createIndexes(writer, oldSchema, newSchema, searchPathHelper)
+            # # PgDiffTables.createClusters(oldSchema, newSchema, searchPathHelper)
+            PgDiffTriggers.createTriggers(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffViews.createViews(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffViews.alterViews(writer, oldSchema, newSchema, searchPathHelper)
 
-            PgDiffSequences.createSequences(oldSchema, newSchema, searchPathHelper)
-            PgDiffSequences.alterSequences(arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffTables.createTables(oldSchema, newSchema, searchPathHelper)
-            PgDiffTables.alterTables(arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffSequences.alterCreatedSequences(oldSchema, newSchema, searchPathHelper)
-            PgDiffFunctions.createFunctions(arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffConstraints.createConstraints(oldSchema, newSchema, True, searchPathHelper)
-            PgDiffConstraints.createConstraints(oldSchema, newSchema, False, searchPathHelper)
-            PgDiffIndexes.createIndexes(oldSchema, newSchema, searchPathHelper)
-            # PgDiffTables.createClusters(oldSchema, newSchema, searchPathHelper)
-            PgDiffTriggers.createTriggers(oldSchema, newSchema, searchPathHelper)
-            PgDiffViews.createViews(oldSchema, newSchema, searchPathHelper)
-            PgDiffViews.alterViews(oldSchema, newSchema, searchPathHelper)
-
-            PgDiffFunctions.alterComments(oldSchema, newSchema, searchPathHelper)
-            PgDiffConstraints.alterComments(oldSchema, newSchema, searchPathHelper)
-            PgDiffIndexes.alterComments(oldSchema, newSchema, searchPathHelper)
-            PgDiffTriggers.alterComments(oldSchema, newSchema, searchPathHelper)
+            PgDiffFunctions.alterComments(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffConstraints.alterComments(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffIndexes.alterComments(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffTriggers.alterComments(writer, oldSchema, newSchema, searchPathHelper)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(usage='Usage: apgdiff [options] <old_dump> <new_dump>')
+    parser = argparse.ArgumentParser(usage='Usage: PgDiff.py [options] <old_dump> <new_dump>')
 
     parser.add_argument('old_dump', nargs='?')
     parser.add_argument('new_dump', nargs='?')
@@ -154,9 +158,17 @@ if __name__ == "__main__":
     parser.add_argument('--add-defaults', dest='addDefaults', action='store_true', help="adds DEFAULT ... in case new column has NOT NULL constraint but no default value (the default value is dropped later)")
     parser.add_argument('--ignore-start-with', dest='ignoreStartWith', action='store_false', help="ignores START WITH modifications on SEQUENCEs (default is not to ignore these changes)")
 
+    parser.add_argument('--debug', dest='debug', action='store_true', help="outputs debug information as trceback etc. (default is not to output traceback)")
+
     arguments = parser.parse_args()
+    writer = Writer()
 
     try:
-        PgDiff().createDiff(arguments)
+        PgDiff.createDiff(writer, arguments)
+        print(writer)
     except Exception as e:
-        print('Error: %s' % e)
+        if arguments.debug:
+            import sys, traceback
+            print(traceback.print_exception(*sys.exc_info()))
+        else:
+            print('Error: %s' % e)

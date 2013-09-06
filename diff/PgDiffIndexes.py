@@ -1,20 +1,20 @@
 class PgDiffIndexes(object):
     @staticmethod
-    def createIndexes(oldSchema, newSchema, searchPathHelper):
+    def createIndexes(writer, oldSchema, newSchema, searchPathHelper):
         for newTableName, newTable in newSchema.tables.items():
 
             # Add new indexes
             if oldSchema is None:
                 for index in newTable.indexes.values():
                     searchPathHelper.outputSearchPath()
-                    print "\n%s\n" % index.getCreationSQL()
+                    writer.writeln(index.getCreationSQL())
             else:
                 for index in PgDiffIndexes.getNewIndexes(oldSchema.getTable(newTableName), newTable):
                     searchPathHelper.outputSearchPath()
-                    print "\n%s\n" % index.getCreationSQL()
+                    writer.writeln(index.getCreationSQL())
 
     @staticmethod
-    def dropIndexes(oldSchema, newSchema, searchPathHelper):
+    def dropIndexes(writer, oldSchema, newSchema, searchPathHelper):
         for newTableName in newSchema.tables:
             oldTable = None
 
@@ -25,11 +25,11 @@ class PgDiffIndexes(object):
 
             # Drop indexes that do not exist in new schema or are modified
             for index in PgDiffIndexes.getDropIndexes(oldTable, newTable):
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % index.getDropSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(index.getDropSQL())
 
     @staticmethod
-    def alterComments(oldSchema, newSchema, searchPathHelper):
+    def alterComments(writer, oldSchema, newSchema, searchPathHelper):
         if oldSchema is None:
             return
 
@@ -41,26 +41,24 @@ class PgDiffIndexes(object):
 
             oldIndex = newSchema.indexes[oldIndexName]
 
-            sbSQL = []
+            # sbSQL = []
             if (oldIndex.comment is None
                     and newIndex.comment is not None
                     or oldIndex.comment is not None
                     and newIndex.comment is not None
                     and oldIndex.comment !=  newIndex.comment):
-                searchPathHelper.outputSearchPath()
-                sbSQL.append("\nCOMMENT ON INDEX ")
-                sbSQL.append(PgDiffUtils.getQuotedName(newIndex.name))
-                sbSQL.append(" IS ")
-                sbSQL.append(newIndex.comment)
-                sbSQL.append(';\n')
-                print ''.join(sbSQL)
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("COMMENT ON INDEX ")
+                writer.write(PgDiffUtils.getQuotedName(newIndex.name))
+                writer.write(" IS ")
+                writer.write(newIndex.comment)
+                writer.writeln(';')
 
             elif oldIndex.comment is not None and newIndex.comment is None:
-                searchPathHelper.outputSearchPath()
-                sbSQL.append("\nCOMMENT ON INDEX ");
-                sbSQL.append(PgDiffUtils.getQuotedName(newIndex.name))
-                sbSQL.append(" IS NULL;")
-                print ''.join(sbSQL)
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("COMMENT ON INDEX ");
+                writer.write(PgDiffUtils.getQuotedName(newIndex.name))
+                writer.writeln(" IS NULL;")
 
     @staticmethod
     def getNewIndexes(oldTable, newTable):

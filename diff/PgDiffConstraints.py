@@ -3,7 +3,7 @@ from PgDiffUtils import PgDiffUtils
 class PgDiffConstraints(object):
 
     @staticmethod
-    def createConstraints(oldSchema, newSchema, primaryKey, searchPathHelper):
+    def createConstraints(writer, oldSchema, newSchema, primaryKey, searchPathHelper):
         for newTableName, newTable in newSchema.tables.items():
 
             oldTable = None
@@ -12,11 +12,11 @@ class PgDiffConstraints(object):
 
             # Add new constraints
             for constraint in PgDiffConstraints.getNewConstraints(oldTable, newTable, primaryKey):
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % constraint.getCreationSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(constraint.getCreationSQL())
 
     @staticmethod
-    def dropConstraints(oldSchema, newSchema, primaryKey, searchPathHelper):
+    def dropConstraints(writer, oldSchema, newSchema, primaryKey, searchPathHelper):
         for newTableName in newSchema.tables:
 
             oldTable = None
@@ -27,11 +27,11 @@ class PgDiffConstraints(object):
 
             # Drop constraints that no more exist or are modified
             for constraint in PgDiffConstraints.getDropConstraints(oldTable, newTable, primaryKey):
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % constraint.getDropSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(constraint.getDropSQL())
 
     @staticmethod
-    def alterComments(oldSchema, newSchema, searchPathHelper):
+    def alterComments(writer, oldSchema, newSchema, searchPathHelper):
 
         if oldSchema is None:
             return
@@ -48,46 +48,44 @@ class PgDiffConstraints(object):
                 if newConstraint is None:
                     continue
 
-                sbSQL = []
+                # sbSQL = []
                 if (oldConstraint.comment is None
                         and newConstraint.comment is not None
                         or oldConstraint.comment is not None
                         and newConstraint.comment is not None
                         and oldConstraint.comment != newConstraint.comment):
 
-                    searchPathHelper.outputSearchPath()
+                    searchPathHelper.outputSearchPath(writer)
 
-                    sbSQL.append("\nCOMMENT ON ")
+                    writer.write("COMMENT ON ")
 
                     if newConstraint.isPrimaryKeyConstraint():
-                        sbSQL.append("INDEX ")
-                        sbSQL.append(PgDiffUtils.getQuotedName(newConstraint.name))
+                        writer.write("INDEX ")
+                        writer.write(PgDiffUtils.getQuotedName(newConstraint.name))
                     else:
-                        sbSQL.append("CONSTRAINT ")
-                        sbSQL.append(PgDiffUtils.getQuotedName(newConstraint.name))
-                        sbSQL.append(" ON ")
-                        sbSQL.append(PgDiffUtils.getQuotedName(newConstraint.tableName))
+                        writer.write("CONSTRAINT ")
+                        writer.write(PgDiffUtils.getQuotedName(newConstraint.name))
+                        writer.write(" ON ")
+                        writer.write(PgDiffUtils.getQuotedName(newConstraint.tableName))
 
-                    sbSQL.append(" IS ")
-                    sbSQL.append(newConstraint.comment)
-                    sbSQL.append(';\n')
-                    print ''.join(sbSQL)
+                    writer.write(" IS ")
+                    writer.write(newConstraint.comment)
+                    writer.writeln(';')
 
                 elif (oldConstraint.comment is not None and newConstraint.comment is None):
-                    searchPathHelper.outputSearchPath()
-                    sbSQL.append("\nCOMMENT ON ")
+                    searchPathHelper.outputSearchPath(writer)
+                    writer.write("COMMENT ON ")
 
                     if newConstraint.isPrimaryKeyConstraint():
-                        sbSQL.appendt("INDEX ");
-                        sbSQL.append(PgDiffUtils.getQuotedName(newConstraint.name))
+                        writer.write("INDEX ");
+                        writer.write(PgDiffUtils.getQuotedName(newConstraint.name))
                     else:
-                        sbSQL.append("CONSTRAINT ");
-                        sbSQL.append(PgDiffUtils.getQuotedName(newConstraint.name))
-                        sbSQL.append(" ON ");
-                        sbSQL.append(PgDiffUtils.getQuotedName(newConstraint.tableName))
+                        writer.write("CONSTRAINT ");
+                        writer.write(PgDiffUtils.getQuotedName(newConstraint.name))
+                        writer.write(" ON ");
+                        writer.write(PgDiffUtils.getQuotedName(newConstraint.tableName))
 
-                    sbSQL.append(" IS NULL;\n");
-                    print ''.join(sbSQL)
+                    writer.writeln(" IS NULL;")
 
     @staticmethod
     def getNewConstraints(oldTable, newTable, primaryKey):
@@ -103,8 +101,6 @@ class PgDiffConstraints(object):
                     if (constraint.isPrimaryKeyConstraint() == primaryKey
                             and (constraintName not in oldTable.constraints
                             or oldTable.constraints[constraintName] != constraint)):
-                        print constraint.__dict__
-                        print oldTable.constraints[constraintName].__dict__
                         result.append(constraint)
 
         return result

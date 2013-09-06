@@ -3,7 +3,7 @@ from PgDiffUtils import PgDiffUtils
 class PgDiffTriggers(object):
 
     @staticmethod
-    def createTriggers(oldSchema, newSchema, searchPathHelper):
+    def createTriggers(writer, oldSchema, newSchema, searchPathHelper):
         for newTableName, newTable in newSchema.tables.items():
             oldTable = None
 
@@ -12,25 +12,26 @@ class PgDiffTriggers(object):
 
             # Add new triggers
             for trigger in PgDiffTriggers.getNewTriggers(oldTable, newTable):
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % trigger.getCreationSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(trigger.getCreationSQL())
 
     @staticmethod
-    def dropTriggers(oldSchema, newSchema, searchPathHelper):
+    def dropTriggers(writer, oldSchema, newSchema, searchPathHelper):
         for newTableName in newSchema.tables:
             oldTable = None
 
             if oldSchema is not None:
                 oldTable = oldSchema.tables.get(newTableName)
-                newTable = newSchema.tables[newTableName]
+
+            newTable = newSchema.tables[newTableName]
 
             # Drop triggers that no more exist or are modified
             for trigger in PgDiffTriggers.getDropTriggers(oldTable, newTable):
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % trigger.getDropSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(trigger.getDropSQL())
 
     @staticmethod
-    def alterComments(oldSchema, newSchema, searchPathHelper):
+    def alterComments(writer, oldSchema, newSchema, searchPathHelper):
         if oldSchema is None:
             return
 
@@ -48,32 +49,25 @@ class PgDiffTriggers(object):
                 if newTrigger is None:
                     continue
 
-                oldTrigger = oldTable.triggers.get(oldTriggerName);
-                sbSQL = []
+                oldTrigger = oldTable.triggers.get(oldTriggerName)
+                searchPathHelper.outputSearchPath(writer)
+                writer.write("COMMENT ON TRIGGER ")
+                writer.write(PgDiffUtils.getQuotedName(newTrigger.name))
+                writer.write(" ON ")
+                writer.write(PgDiffUtils.getQuotedName(newTrigger.tableName))
+
                 if (oldTrigger.comment is None
                         and newTrigger.comment is not None
                         or oldTrigger.comment is not None
                         and newTrigger.comment is not None
                         and oldTrigger.comment !=  newTrigger.comment):
-                    searchPathHelper.outputSearchPath()
-                    sbSQL.append("\nCOMMENT ON TRIGGER ")
-                    sbSQL.append(PgDiffUtils.getQuotedName(newTrigger.name))
-                    sbSQL.append(" ON ")
-                    sbSQL.append(PgDiffUtils.getQuotedName(newTrigger.tableName))
-                    sbSQL.append(" IS ");
-                    sbSQL.append(newTrigger.comment)
-                    sbSQL.append(';')
-                    print ''.join(sbSQL)
+                    writer.write(" IS ");
+                    writer.write(newTrigger.comment)
+                elif (oldTrigger.comment is not None and newTrigger.comment is None):
+                    writer.write(PgDiffUtils.getQuotedName(newTrigger.tableName))
+                    writer.write(" IS NULL")
 
-                elif (oldTrigger.comment is not None
-                        and newTrigger.comment is None):
-                    searchPathHelper.outputSearchPath()
-                    sbSQL.append("\nCOMMENT ON TRIGGER ")
-                    sbSQL.append(PgDiffUtils.getQuotedName(newTrigger.name))
-                    sbSQL.append(" ON ")
-                    sbSQL.append(PgDiffUtils.getQuotedName(newTrigger.tableName))
-                    sbSQL.append(" IS NULL;\n")
-                    print ''.join(sbSQL)
+                writer.writeln(';')
 
     @staticmethod
     def getNewTriggers(oldTable, newTable):
@@ -93,7 +87,7 @@ class PgDiffTriggers(object):
     def getDropTriggers(oldTable, newTable):
         result = list()
 
-        if (newTable is not None and oldTable is not None):
+        if None not in (newTable, oldTable):
             newTriggers = newTable.triggers
 
             for oldTriggerName in oldTable.triggers:

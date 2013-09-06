@@ -3,7 +3,7 @@ class SearchPathHelper(object):
         self.searchPath = searchPath
         self.wasOutput = False
 
-    def outputSearchPath(self):
+    def outputSearchPath(self, writer):
         if self.searchPath is not None and not self.wasOutput:
-            print self.searchPath
+            writer.println(self.searchPath)
             self.wasOutput = True

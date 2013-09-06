@@ -3,26 +3,26 @@ from PgDiffUtils import PgDiffUtils
 class PgDiffSequences(object):
 
     @staticmethod
-    def dropSequences(oldSchema, newSchema, searchPathHelper):
+    def dropSequences(writer, oldSchema, newSchema, searchPathHelper):
         if oldSchema is None:
             return
 
         # Drop sequences that do not exist in new schema
         for sequenceName in oldSchema.sequences:
             if sequenceName not in newSchema.sequences:
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % oldSchema.sequences[sequenceName].getDropSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(oldSchema.sequences[sequenceName].getDropSQL())
 
     @staticmethod
-    def createSequences(oldSchema, newSchema, searchPathHelper):
+    def createSequences(writer, oldSchema, newSchema, searchPathHelper):
         # Add new sequences
         for sequenceName in newSchema.sequences:
             if oldSchema is None or sequenceName not in oldSchema.sequences:
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % newSchema.sequences[sequenceName].getCreationSQL()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln(newSchema.sequences[sequenceName].getCreationSQL())
 
     @staticmethod
-    def alterSequences(arguments, oldSchema, newSchema, searchPathHelper):
+    def alterSequences(writer, arguments, oldSchema, newSchema, searchPathHelper):
         if oldSchema is None:
             return
 
@@ -92,26 +92,26 @@ class PgDiffSequences(object):
                 sbSQL.append(newOwnedBy)
 
             if len(sbSQL):
-                searchPathHelper.outputSearchPath()
-                print "\nALTER SEQUENCE %s %s;" % (PgDiffUtils.getQuotedName(newSequence.name), ''.join(sbSQL))
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln("ALTER SEQUENCE %s %s;" % (PgDiffUtils.getQuotedName(newSequence.name), ''.join(sbSQL)))
 
             if (oldSequence.comment is None and newSequence.comment is not None
                     or oldSequence.comment is not None
                     and newSequence.comment is not None
                     and oldSequence.comment != newSequence.comment):
-                searchPathHelper.outputSearchPath()
-                print "\nCOMMENT ON SEQUENCE %s IS %s;" % (PgDiffUtils.getQuotedName(newSequence.name), newSequence.comment)
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln("COMMENT ON SEQUENCE %s IS %s;" % (PgDiffUtils.getQuotedName(newSequence.name), newSequence.comment))
 
             elif (oldSequence.comment is not None and newSequence.comment is None):
-                searchPathHelper.outputSearchPath()
-                print "\nCOMMENT ON SEQUENCE %s IS NULL;" % newSequence.getName()
+                searchPathHelper.outputSearchPath(writer)
+                writer.writeln("\nCOMMENT ON SEQUENCE %s IS NULL;" % PgDiffUtils.getQuotedName(newSequence.name))
 
     @staticmethod
-    def alterCreatedSequences(oldSchema, newSchema, searchPathHelper):
+    def alterCreatedSequences(writer, oldSchema, newSchema, searchPathHelper):
         # Alter created sequences
         for sequenceName, sequence in newSchema.sequences.items():
             if ((oldSchema is None or sequenceName not in oldSchema.sequences)
                     and sequence.ownedBy is not None
                     and len(sequence.ownedBy) > 0):
-                searchPathHelper.outputSearchPath()
-                print "\n%s\n" % sequence.getOwnedBySQL()
+                searchPathHelper.outputSearchPath(writer)
+                PgDiffUtils.getQuotedName(sequence.getOwnedBySQL())
