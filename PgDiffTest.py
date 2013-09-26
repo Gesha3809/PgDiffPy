@@ -103,7 +103,7 @@ class PgDiffTest(object):
         arguments.ignoreFunctionWhitespace = ignoreFunctionWhitespace
         arguments.ignoreStartWith = ignoreStartWith
 
-        PgDiff.createDiff(writer, arguments)
+        PgDiff.create_diff(writer, arguments)
 
         expectedDiffSQL = open(diffFilePath,'r').read().strip()
         gotDiffSQL = str(writer).strip()

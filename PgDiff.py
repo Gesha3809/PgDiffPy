@@ -11,35 +11,35 @@ from diff.PgDiffIndexes import PgDiffIndexes
 from diff.PgDiffSequences import PgDiffSequences
 from diff.PgDiffFunctions import PgDiffFunctions
 
+
 class PgDiff(object):
 
     @staticmethod
-    def createDiff(writer, arguments):
-        oldDatabase = PgDumpLoader.loadDatabaseSchema(arguments.old_dump)
-        newDatabase = PgDumpLoader.loadDatabaseSchema(arguments.new_dump)
+    def create_diff(writer, arguments):
+        old_database = PgDumpLoader.loadDatabaseSchema(arguments.old_dump)
+        new_database = PgDumpLoader.loadDatabaseSchema(arguments.new_dump)
 
-        PgDiff.diffDatabaseSchemas(writer, arguments, oldDatabase, newDatabase)
+        PgDiff.diff_database_schemas(writer, arguments, old_database, new_database)
 
     @staticmethod
-    def diffDatabaseSchemas(writer, arguments, oldDatabase, newDatabase):
+    def diff_database_schemas(writer, arguments, old_database, new_database):
         if arguments.addTransaction:
             writer.writeln("START TRANSACTION;")
 
-        if (oldDatabase.comment is None
-                and newDatabase.comment is not None
-                or oldDatabase.comment is not None
-                and newDatabase.comment is not None
-                and oldDatabase.comment != newDatabase.comment):
+        if (old_database.comment is None
+                and new_database.comment is not None
+                or old_database.comment is not None
+                and new_database.comment is not None
+                and old_database.comment != new_database.comment):
             writer.write("COMMENT ON DATABASE current_database() IS ")
-            writer.write(newDatabase.comment)
+            writer.write(new_database.comment)
             writer.writeln(";")
-        elif (oldDatabase.comment is not None and newDatabase.comment is None):
+        elif old_database.comment is not None and new_database.comment is None:
             writer.writeln("COMMENT ON DATABASE current_database() IS NULL;")
 
-
-        PgDiff.dropOldSchemas(writer, oldDatabase, newDatabase)
-        PgDiff.createNewSchemas(writer, oldDatabase, newDatabase)
-        PgDiff.updateSchemas(writer, arguments, oldDatabase, newDatabase)
+        PgDiff.drop_old_schemas(writer, old_database, new_database)
+        PgDiff.create_new_schemas(writer, old_database, new_database)
+        PgDiff.update_schemas(writer, arguments, old_database, new_database)
 
         if arguments.addTransaction:
             writer.writeln("COMMIT TRANSACTION;")
@@ -76,76 +76,77 @@ class PgDiff(object):
         # }
 
     @staticmethod
-    def dropOldSchemas(writer, oldDatabase, newDatabase):
-        for oldSchemaName in oldDatabase.schemas:
-            if newDatabase.getSchema(oldSchemaName) is None:
-                writer.writeln("DROP SCHEMA "+ PgDiffUtils.getQuotedName(oldSchemaName) + " CASCADE;")
+    def drop_old_schemas(writer, old_database, new_database):
+        for oldSchemaName in old_database.schemas:
+            if new_database.getSchema(oldSchemaName) is None:
+                writer.writeln("DROP SCHEMA %s CASCADE;" % PgDiffUtils.getQuotedName(oldSchemaName))
 
     @staticmethod
-    def createNewSchemas(writer, oldDatabase, newDatabase):
-        for newSchemaName in newDatabase.schemas:
-            if oldDatabase.getSchema(newSchemaName) is None:
-                writer.writeln(newDatabase.schemas[newSchemaName].getCreationSQL())
+    def create_new_schemas(writer, old_database, new_database):
+        for newSchemaName in new_database.schemas:
+            if old_database.getSchema(newSchemaName) is None:
+                writer.writeln(new_database.schemas[newSchemaName].getCreationSQL())
 
     @staticmethod
-    def updateSchemas(writer, arguments, oldDatabase, newDatabase):
+    def update_schemas(writer, arguments, old_database, new_database):
         # We set search path if more than one schemas or it's name is not public
-        setSearchPath = len(newDatabase.schemas) > 1 or newDatabase.schemas.itervalues().next().name != "public"
+        set_search_path = len(new_database.schemas) > 1 or new_database.schemas.itervalues().next().name != "public"
 
-        for newSchemaName in newDatabase.schemas:
-            if setSearchPath:
-                searchPathHelper = SearchPathHelper("SET search_path = %s, pg_catalog;" % PgDiffUtils.getQuotedName(newSchemaName, True))
+        for newSchemaName in new_database.schemas:
+            if set_search_path:
+                search_path_helper = SearchPathHelper("SET search_path = %s, pg_catalog;" %
+                                                      PgDiffUtils.getQuotedName(newSchemaName, True))
             else:
-                searchPathHelper = SearchPathHelper(None)
+                search_path_helper = SearchPathHelper(None)
 
-            oldSchema = oldDatabase.schemas.get(newSchemaName)
-            newSchema = newDatabase.schemas[newSchemaName]
+            old_schema = old_database.schemas.get(newSchemaName)
+            new_schema = new_database.schemas[newSchemaName]
 
-            if oldSchema is not None:
-                if (oldSchema.comment is None
-                        and newSchema.comment is not None
-                        or oldSchema.comment is not None
-                        and newSchema.comment is not None
-                        and oldSchema.comment != newSchema.comment):
+            if old_schema is not None:
+                if (old_schema.comment is None
+                        and new_schema.comment is not None
+                        or old_schema.comment is not None
+                        and new_schema.comment is not None
+                        and old_schema.comment != new_schema.comment):
                     writer.write("COMMENT ON SCHEMA ")
-                    writer.write(PgDiffUtils.getQuotedName(newSchema.name))
+                    writer.write(PgDiffUtils.getQuotedName(new_schema.name))
                     writer.write(" IS ")
-                    writer.write(newSchema.comment)
+                    writer.write(new_schema.comment)
                     writer.writeln(';')
 
-                elif (oldSchema.comment is not None and newSchema.comment is None):
+                elif old_schema.comment is not None and new_schema.comment is None:
                     writer.write("COMMENT ON SCHEMA ")
-                    writer.write(PgDiffUtils.getQuotedName(newSchema.name))
+                    writer.write(PgDiffUtils.getQuotedName(new_schema.name))
                     writer.writeln(" IS NULL;")
 
-            PgDiffTriggers.dropTriggers(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffFunctions.dropFunctions(writer, arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffViews.dropViews(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffConstraints.dropConstraints(writer, oldSchema, newSchema, True, searchPathHelper)
-            PgDiffConstraints.dropConstraints(writer, oldSchema, newSchema, False, searchPathHelper)
-            PgDiffIndexes.dropIndexes(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffTriggers.dropTriggers(writer, old_schema, new_schema, search_path_helper)
+            PgDiffFunctions.dropFunctions(writer, arguments, old_schema, new_schema, search_path_helper)
+            PgDiffViews.dropViews(writer, old_schema, new_schema, search_path_helper)
+            PgDiffConstraints.dropConstraints(writer, old_schema, new_schema, True, search_path_helper)
+            PgDiffConstraints.dropConstraints(writer, old_schema, new_schema, False, search_path_helper)
+            PgDiffIndexes.dropIndexes(writer, old_schema, new_schema, search_path_helper)
             # # PgDiffTables.dropClusters(oldSchema, newSchema, searchPathHelper)
-            PgDiffTables.dropTables(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffSequences.dropSequences(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffTables.dropTables(writer, old_schema, new_schema, search_path_helper)
+            PgDiffSequences.dropSequences(writer, old_schema, new_schema, search_path_helper)
 
-            PgDiffSequences.createSequences(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffSequences.alterSequences(writer, arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffTables.createTables(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffTables.alterTables(writer, arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffSequences.alterCreatedSequences(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffFunctions.createFunctions(writer, arguments, oldSchema, newSchema, searchPathHelper)
-            PgDiffConstraints.createConstraints(writer, oldSchema, newSchema, True, searchPathHelper)
-            PgDiffConstraints.createConstraints(writer, oldSchema, newSchema, False, searchPathHelper)
-            PgDiffIndexes.createIndexes(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffSequences.createSequences(writer, old_schema, new_schema, search_path_helper)
+            PgDiffSequences.alterSequences(writer, arguments, old_schema, new_schema, search_path_helper)
+            PgDiffTables.createTables(writer, old_schema, new_schema, search_path_helper)
+            PgDiffTables.alterTables(writer, arguments, old_schema, new_schema, search_path_helper)
+            PgDiffSequences.alterCreatedSequences(writer, old_schema, new_schema, search_path_helper)
+            PgDiffFunctions.createFunctions(writer, arguments, old_schema, new_schema, search_path_helper)
+            PgDiffConstraints.createConstraints(writer, old_schema, new_schema, True, search_path_helper)
+            PgDiffConstraints.createConstraints(writer, old_schema, new_schema, False, search_path_helper)
+            PgDiffIndexes.createIndexes(writer, old_schema, new_schema, search_path_helper)
             # # PgDiffTables.createClusters(oldSchema, newSchema, searchPathHelper)
-            PgDiffTriggers.createTriggers(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffViews.createViews(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffViews.alterViews(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffTriggers.createTriggers(writer, old_schema, new_schema, search_path_helper)
+            PgDiffViews.createViews(writer, old_schema, new_schema, search_path_helper)
+            PgDiffViews.alterViews(writer, old_schema, new_schema, search_path_helper)
 
-            PgDiffFunctions.alterComments(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffConstraints.alterComments(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffIndexes.alterComments(writer, oldSchema, newSchema, searchPathHelper)
-            PgDiffTriggers.alterComments(writer, oldSchema, newSchema, searchPathHelper)
+            PgDiffFunctions.alterComments(writer, old_schema, new_schema, search_path_helper)
+            PgDiffConstraints.alterComments(writer, old_schema, new_schema, search_path_helper)
+            PgDiffIndexes.alterComments(writer, old_schema, new_schema, search_path_helper)
+            PgDiffTriggers.alterComments(writer, old_schema, new_schema, search_path_helper)
 
 
 if __name__ == "__main__":
@@ -168,11 +169,12 @@ if __name__ == "__main__":
     writer = Writer()
 
     try:
-        PgDiff.createDiff(writer, arguments)
+        PgDiff.create_diff(writer, arguments)
         print(writer)
     except Exception as e:
         if arguments.debug:
-            import sys, traceback
+            import sys
+            import traceback
             print(traceback.print_exception(*sys.exc_info()))
         else:
             print('Error: %s' % e)
