@@ -6,28 +6,28 @@ class CreateViewParser(object):
     def parse(database, statement):
         parser = Parser(statement)
         parser.expect("CREATE")
-        parser.expectOptional("OR", "REPLACE")
+        parser.expect_optional("OR", "REPLACE")
         parser.expect("VIEW")
 
-        viewName = parser.parseIdentifier()
+        viewName = parser.parse_identifier()
 
-        columnsExist = parser.expectOptional("(")
+        columnsExist = parser.expect_optional("(")
         columnNames = list()
 
         if (columnsExist):
-            while not parser.expectOptional(")"):
-                columnNames.append(ParserUtils.getObjectName(parser.parseIdentifier()))
-                parser.expectOptional(",")
+            while not parser.expect_optional(")"):
+                columnNames.append(ParserUtils.get_object_name(parser.parse_identifier()))
+                parser.expect_optional(",")
 
         parser.expect("AS")
 
-        query = parser.getRest()
+        query = parser.get_rest()
 
-        view = PgView(ParserUtils.getObjectName(viewName))
+        view = PgView(ParserUtils.get_object_name(viewName))
         view.columnNames = columnNames
         view.query = query
 
-        schemaName = ParserUtils.getSchemaName(viewName, database)
+        schemaName = ParserUtils.get_schema_name(viewName, database)
         schema = database.getSchema(schemaName)
 
         if schema is None:

@@ -7,20 +7,20 @@ class CreateSchemaParser(object):
 		parser = Parser(statement)
 		parser.expect("CREATE", "SCHEMA")
 
-		if parser.expectOptional("AUTHORIZATION"):
-			schema = PgSchema(ParserUtils.getObjectName(parser.parseIdentifier()))
+		if parser.expect_optional("AUTHORIZATION"):
+			schema = PgSchema(ParserUtils.get_object_name(parser.parse_identifier()))
 			database.addSchema(schema)
 			schema.authorization = schema.name
 
 		else:
-			schemaName = ParserUtils.getObjectName(parser.parseIdentifier())
+			schemaName = ParserUtils.get_object_name(parser.parse_identifier())
 			schema = PgSchema(schemaName)
 			database.schemas[schemaName] = schema
 
-			if parser.expectOptional("AUTHORIZATION"):
-				schema.authorization = ParserUtils.getObjectName(parser.parseIdentifier())
+			if parser.expect_optional("AUTHORIZATION"):
+				schema.authorization = ParserUtils.get_object_name(parser.parse_identifier())
 
-		definition = parser.getRest()
+		definition = parser.get_rest()
 
 		if definition:
 			schema.definition = definition

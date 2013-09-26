@@ -1,6 +1,6 @@
 class Parser(object):
     def __init__(self, statement):
-        self.position=0
+        self.position = 0
         self.statement = statement
 
     # Checks whether the string contains given word on current position. If not
@@ -12,245 +12,242 @@ class Parser(object):
     # Checks whether string contains at current position sequence of the words.
     # Return True if whole sequence was found, raise Exception if first
     # statement was found but other were not found, otherwise False
-    def expectOptional(self, *words):
-        found =  self._expect(words[0], True)
+    def expect_optional(self, *words):
+        found = self._expect(words[0], True)
 
         if not found:
             return False
 
         for word in words[1:]:
-            self.skipWhitespace()
+            self.skip_whitespace()
             self._expect(word, False)
 
         return True
 
-    def parseIdentifier(self):
-        identifier = self._parseIdentifier()
+    def parse_identifier(self):
+        identifier = self._parse_identifier()
 
         if self.statement[self.position] == '.':
-            self.position+=1
-            identifier += '.' + self._parseIdentifier()
+            self.position += 1
+            identifier += '.' + self._parse_identifier()
 
-        self.skipWhitespace()
+        self.skip_whitespace()
 
         return identifier
 
-    def parseInteger(self):
-        endPos = self.position
+    def parse_integer(self):
+        end_pos = self.position
 
-        while endPos <= len(self.statement):
-            if not self.statement[endPos].isdigit():
+        while end_pos <= len(self.statement):
+            if not self.statement[end_pos].isdigit():
                 break
-            endPos += 1
+            end_pos += 1
 
         try:
-            result = int(self.statement[self.position: endPos])
+            result = int(self.statement[self.position: end_pos])
 
-            self.position = endPos
-            self.skipWhitespace()
+            self.position = end_pos
+            self.skip_whitespace()
 
             return result
         except ValueError:
-            raise Exception("Cannot parse string: %s\nExpected integer at position %s '%s'" % (self.statement, self.position + 1,
-                    self.statement[self.position: self.position + 20]))
+            raise Exception("Cannot parse string: %s\nExpected integer at position %s '%s'" %
+                            (self.statement, self.position + 1, self.statement[self.position: self.position + 20]))
 
-    def parseDataType(self):
-        endPos = self.position
+    def parse_data_type(self):
+        end_pos = self.position
 
-        while (endPos < len(self.statement)
-                and not self.statement[endPos].isspace()
-                and self.statement[endPos] not in '(),'):
-            endPos += 1
+        while (end_pos < len(self.statement)
+                and not self.statement[end_pos].isspace()
+                and self.statement[end_pos] not in '(),'):
+            end_pos += 1
 
-        if (endPos == self.position):
-            raise Exception("Cannot parse string: %s\nExpected data type definition at position %s '%s'" % (self.statement, self.statement + 1, self.statement[self.position: self.position + 20]))
+        if end_pos == self.position:
+            raise Exception("Cannot parse string: %s\nExpected data type definition at position %s '%s'" %
+                           (self.statement, self.statement + 1, self.statement[self.position: self.position + 20]))
 
-        dataType = self.statement[self.position: endPos]
+        data_type = self.statement[self.position: end_pos]
 
-        self.position = endPos
-        self.skipWhitespace()
+        self.position = end_pos
+        self.skip_whitespace()
 
-        if ("character" == dataType
-                and self.expectOptional("varying")):
-            dataType = "character varying"
-        elif ("double" == dataType
-                and self.expectOptional("precision")):
-            dataType = "double precision"
+        if ("character" == data_type
+                and self.expect_optional("varying")):
+            data_type = "character varying"
+        elif ("double" == data_type
+                and self.expect_optional("precision")):
+            data_type = "double precision"
 
-        timestamp = "timestamp" == dataType or "time" == dataType
+        timestamp = "timestamp" == data_type or "time" == data_type
 
-        if (self.statement[self.position] == '('):
-            dataType += self.getExpression()
+        if self.statement[self.position] == '(':
+            data_type += self.get_expression()
 
-        if (timestamp):
-            if (self.expectOptional("with", "time", "zone")):
-                dataType += " with time zone"
-            elif (expectOptional("without", "time", "zone")):
-                dataType += " without time zone"
+        if timestamp:
+            if self.expect_optional("with", "time", "zone"):
+                data_type += " with time zone"
+            elif self.expect_optional("without", "time", "zone"):
+                data_type += " without time zone"
 
-
-        if (self.expectOptional("[")):
+        if self.expect_optional("["):
             self.expect("]")
-            dataType += "[]"
+            data_type += "[]"
 
-        return dataType
+        return data_type
 
-    def parseString(self):
-        result = ''
-        if (self.statement[self.position] == '\''):
+    def parse_string(self):
+        if self.statement[self.position] == '\'':
             escape = False
-            endPos = self.position + 1
+            end_pos = self.position + 1
 
-            for endPos in range(endPos, len(self.statement)):
-                char = self.statement[endPos]
+            for end_pos in range(end_pos, len(self.statement)):
+                char = self.statement[end_pos]
 
-                if (char == '\\'):
+                if char == '\\':
                     escape = not escape
                 elif not escape and char == '\'':
-                    if (endPos + 1 < len(self.statement) and self.statement[endPos + 1] == '\''):
-                        endPos += 1
+                    if end_pos + 1 < len(self.statement) and self.statement[end_pos + 1] == '\'':
+                        end_pos += 1
                     else:
                         break
 
-
-            result = self.statement[self.position: endPos + 1]
+            result = self.statement[self.position: end_pos + 1]
             # except (final Throwable ex) {
             #     throw new RuntimeException("Failed to get substring: " + string
             #             + " start pos: " + position + " end pos: "
             #             + (endPos + 1), ex);
             # }
 
-            self.position = endPos + 1
-            self.skipWhitespace()
+            self.position = end_pos + 1
+            self.skip_whitespace()
 
         else:
-            endPos = self.position
+            end_pos = self.position
 
-            for endPos in range(endPos, len(self.statement)):
-                char = self.statement[endPos]
+            for end_pos in range(end_pos, len(self.statement)):
+                char = self.statement[end_pos]
 
-                if (char.isspace() or char in ',);'):
+                if char.isspace() or char in ',);':
                     break
 
-            if (self.position == endPos):
-                raise Exception("Cannot parse string: %s\nExpected string at position %s" % (self.statement, self.position))
+            if self.position == end_pos:
+                raise Exception("Cannot parse string: %s\nExpected string at position %s" %
+                               (self.statement, self.position))
 
-            result = self.statement[self.position: endPos]
+            result = self.statement[self.position: end_pos]
 
-            self.position = endPos
-            self.skipWhitespace()
-
-        return result
-
-
-    def getExpression(self):
-        posEnd = self._getExpressionEnd()
-
-        if (self.position == posEnd):
-            raise Exception("Cannot parse string: %s\nExpected expression at position %s '%s'"
-                % (self.statement, self.position + 1, self.statement[self.position:self.position + 20]))
-
-        result = self.statement[self.position:posEnd].strip()
-
-        self.position = posEnd
+            self.position = end_pos
+            self.skip_whitespace()
 
         return result
 
-    def getRest(self):
-        if (self.statement[len(self.statement) - 1] == ';'):
-            if (self.position == len(self.statement) - 1):
+    def get_expression(self):
+        pos_end = self._get_expression_end()
+
+        if self.position == pos_end:
+            raise Exception("Cannot parse string: %s\nExpected expression at position %s '%s'" %
+                           (self.statement, self.position + 1, self.statement[self.position:self.position + 20]))
+
+        result = self.statement[self.position:pos_end].strip()
+
+        self.position = pos_end
+
+        return result
+
+    def get_rest(self):
+        if self.statement[len(self.statement) - 1] == ';':
+            if self.position == len(self.statement) - 1:
                 return None
             else:
                 result = self.statement[self.position:len(self.statement)-1]
         else:
-            result = self.statement[position:]
+            result = self.statement[self.position:]
 
         self.position = len(self.statement)
 
         return result
 
-    def skipWhitespace(self):
-        for self.position in range(self.position,len(self.statement)):
-            if (not self.statement[self.position].isspace()):
+    def skip_whitespace(self):
+        for self.position in range(self.position, len(self.statement)):
+            if not self.statement[self.position].isspace():
                 break
-            self.position +=1
+            self.position += 1
 
-    def throwUnsupportedCommand(self):
+    def throw_unsupported_command(self):
         raise Exception('Cannot parse string: %s\nUnsupported command at position %s \'%s\'' %
-        (self.statement, self.position + 1, self.statement[self.position: self.position + 20]))
+                        (self.statement, self.position + 1, self.statement[self.position: self.position + 20]))
 
-    def _getExpressionEnd(self):
-        bracesCount = 0
-        singleQuoteOn = False
-        charPos = self.position
+    def _get_expression_end(self):
+        braces_count = 0
+        single_quote_on = False
+        char_pos = self.position
 
-        for charPos in range(charPos, len(self.statement)):
-            chr = self.statement[charPos]
+        for char_pos in range(char_pos, len(self.statement)):
+            char = self.statement[char_pos]
 
-            if (chr == '('):
-                bracesCount+=1
-            elif (chr == ')'):
-                if (bracesCount == 0):
+            if char == '(':
+                braces_count += 1
+            elif char == ')':
+                if braces_count == 0:
                     break
                 else:
-                    bracesCount-=1
-            elif (chr == '\''):
-                singleQuoteOn = not singleQuoteOn
-            elif ((chr == ',') and not singleQuoteOn and (bracesCount == 0)):
+                    braces_count -= 1
+            elif char == '\'':
+                single_quote_on = not single_quote_on
+            elif (char == ',') and not single_quote_on and (braces_count == 0):
                 break
-            elif (chr == ';' and bracesCount == 0 and not singleQuoteOn):
-                break;
+            elif char == ';' and braces_count == 0 and not single_quote_on:
+                break
 
-        return charPos
+        return char_pos
 
-    def _expect(self, word, isoptional):
-        wordEnd = self.position + len(word)
+    def _expect(self, word, is_optional):
+        word_end = self.position + len(word)
 
-        if (wordEnd <= len(self.statement)
-            and self.statement[self.position:wordEnd].lower() == word.lower()
-            and (wordEnd == len(self.statement)
-            or self.statement[wordEnd].isspace()
-            or self.statement[wordEnd] in ';),['
+        if (word_end <= len(self.statement)
+            and self.statement[self.position:word_end].lower() == word.lower()
+            and (word_end == len(self.statement)
+            or self.statement[word_end].isspace()
+            or self.statement[word_end] in ';),['
             or word in '(,[]')):
-                self.position = wordEnd
-                self.skipWhitespace()
+                self.position = word_end
+                self.skip_whitespace()
                 return True
 
-        if isoptional:
+        if is_optional:
             return False
 
         # Throw Exception CannotParseStringExpectedWord
-        raise Exception('Cannot parse string: %s\nExpected %s at position %s \'%s\''
-            % (self.statement, word, self.position+1, self.statement[self.position:self.position+20]))
+        raise Exception('Cannot parse string: %s\nExpected %s at position %s \'%s\'' %
+                        (self.statement, word, self.position+1, self.statement[self.position:self.position+20]))
 
-
-    def _parseIdentifier(self):
+    def _parse_identifier(self):
         quoted = self.statement[self.position] == '"'
 
         if quoted:
-            posEnd = self.statement.find('"', self.position + 1)
-            result =  self.statement[self.position: posEnd + 1]
-            self.position = posEnd + 1
+            pos_end = self.statement.find('"', self.position + 1)
+            result = self.statement[self.position: pos_end + 1]
+            self.position = pos_end + 1
 
             return result
         else:
-            startPos = self.position
+            start_pos = self.position
 
-            for self.position in range(startPos,len(self.statement)):
-                chr = self.statement[self.position]
+            for self.position in range(start_pos, len(self.statement)):
+                char = self.statement[self.position]
 
-                if (chr.isspace() or chr in ',();.'):
+                if char.isspace() or char in ',();.':
                     break
 
-            result = self.statement[startPos:self.position].lower()
+            result = self.statement[start_pos:self.position].lower()
 
             return result
 
 
 class ParserUtils(object):
     @staticmethod
-    def getSchemaName(name, database):
-        names = ParserUtils.splitNames(name)
+    def get_schema_name(name, database):
+        names = ParserUtils.split_names(name)
 
         if len(names) < 2:
             return database.defaultSchema.name
@@ -259,50 +256,50 @@ class ParserUtils(object):
 
     # Returns object name from optionally schema qualified name.
     @staticmethod
-    def getObjectName(name):
-        names = ParserUtils.splitNames(name)
+    def get_object_name(name):
+        names = ParserUtils.split_names(name)
 
         return names[len(names) - 1]
 
     @staticmethod
-    def getSecondObjectName(name):
-        names = ParserUtils.splitNames(name)
+    def get_second_object_name(name):
+        names = ParserUtils.split_names(name)
 
         return names[len(names) - 2]
 
     @staticmethod
-    def getThirdObjectName(name):
-        names = ParserUtils.splitNames(name)
+    def get_third_object_name(name):
+        names = ParserUtils.split_names(name)
 
         return names[len(names) - 3] if len(names) >= 3 else None
 
     @staticmethod
-    def splitNames(string):
+    def split_names(string):
         if string.find('"') == -1:
             return string.split(".")
         else:
             strings = []
-            startPos = 0
+            start_pos = 0
 
             while True:
-                if string[startPos] == '"':
-                    endPos = string.find('"', startPos + 1);
-                    strings.append(string[startPos + 1:endPos])
+                if string[start_pos] == '"':
+                    end_pos = string.find('"', start_pos + 1)
+                    strings.append(string[start_pos + 1:end_pos])
 
-                    if endPos + 1 == len(string):
+                    if end_pos + 1 == len(string):
                         break
-                    elif string[endPos + 1] == '.':
-                        startPos = endPos + 2
+                    elif string[end_pos + 1] == '.':
+                        start_pos = end_pos + 2
                     else:
-                        startPos = endPos + 1
+                        start_pos = end_pos + 1
                 else:
-                    endPos = string.find('.', startPos)
+                    end_pos = string.find('.', start_pos)
 
-                    if endPos == -1:
-                        strings.append(string[startPos:])
+                    if end_pos == -1:
+                        strings.append(string[start_pos:])
                         break
                     else:
-                        strings.append(string[startPos:endPos])
-                        startPos = endPos + 1
+                        strings.append(string[start_pos:end_pos])
+                        start_pos = end_pos + 1
 
             return strings

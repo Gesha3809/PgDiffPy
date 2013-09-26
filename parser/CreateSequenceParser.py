@@ -7,9 +7,9 @@ class CreateSequenceParser(object):
         parser = Parser(statement)
         parser.expect("CREATE", "SEQUENCE")
 
-        sequenceName = parser.parseIdentifier();
-        sequence = PgSequence(ParserUtils.getObjectName(sequenceName))
-        schemaName = ParserUtils.getSchemaName(sequenceName, database)
+        sequenceName = parser.parse_identifier();
+        sequence = PgSequence(ParserUtils.get_object_name(sequenceName))
+        schemaName = ParserUtils.get_schema_name(sequenceName, database)
         schema = database.getSchema(schemaName)
 
         if schema is None:
@@ -17,36 +17,36 @@ class CreateSequenceParser(object):
 
         schema.addSequence(sequence)
 
-        while not parser.expectOptional(";"):
-            if parser.expectOptional("INCREMENT"):
-                parser.expectOptional("BY")
-                sequence.increment = parser.parseString()
-            elif parser.expectOptional("MINVALUE"):
-                sequence.minValue = parser.parseString()
-            elif parser.expectOptional("MAXVALUE"):
-                sequence.maxValue = parser.parseString()
-            elif parser.expectOptional("START"):
-                parser.expectOptional("WITH")
-                sequence.startWith = parser.parseString()
-            elif parser.expectOptional("CACHE"):
-                sequence.cache = parser.parseString()
-            elif parser.expectOptional("CYCLE"):
+        while not parser.expect_optional(";"):
+            if parser.expect_optional("INCREMENT"):
+                parser.expect_optional("BY")
+                sequence.increment = parser.parse_string()
+            elif parser.expect_optional("MINVALUE"):
+                sequence.minValue = parser.parse_string()
+            elif parser.expect_optional("MAXVALUE"):
+                sequence.maxValue = parser.parse_string()
+            elif parser.expect_optional("START"):
+                parser.expect_optional("WITH")
+                sequence.startWith = parser.parse_string()
+            elif parser.expect_optional("CACHE"):
+                sequence.cache = parser.parse_string()
+            elif parser.expect_optional("CYCLE"):
                 sequence.cycle = True
-            elif parser.expectOptional("OWNED", "BY"):
-                if parser.expectOptional("NONE"):
+            elif parser.expect_optional("OWNED", "BY"):
+                if parser.expect_optional("NONE"):
                     sequence.ownedBy = None
                 else:
-                    sequence.ownedBy = ParserUtils.getObjectName(parser.parseIdentifier())
+                    sequence.ownedBy = ParserUtils.get_object_name(parser.parse_identifier())
 
-            elif parser.expectOptional("NO"):
-                if parser.expectOptional("MINVALUE"):
+            elif parser.expect_optional("NO"):
+                if parser.expect_optional("MINVALUE"):
                     sequence.minValue = None
-                elif parser.expectOptional("MAXVALUE"):
+                elif parser.expect_optional("MAXVALUE"):
                     sequence.maxValue = None
-                elif parser.expectOptional("CYCLE"):
+                elif parser.expect_optional("CYCLE"):
                     sequence.cycle = False
                 else:
-                    parser.throwUnsupportedCommand()
+                    parser.throw_unsupported_command()
 
             else:
-                parser.throwUnsupportedCommand()
+                parser.throw_unsupported_command()

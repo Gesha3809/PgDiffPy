@@ -7,18 +7,18 @@ class CreateIndexParser(object):
         parser = Parser(statement)
         parser.expect("CREATE")
 
-        unique = parser.expectOptional("UNIQUE")
+        unique = parser.expect_optional("UNIQUE")
 
         parser.expect("INDEX")
-        parser.expectOptional("CONCURRENTLY")
+        parser.expect_optional("CONCURRENTLY")
 
-        indexName = ParserUtils.getObjectName(parser.parseIdentifier())
+        indexName = ParserUtils.get_object_name(parser.parse_identifier())
 
         parser.expect("ON")
 
-        tableName = parser.parseIdentifier()
-        definition = parser.getRest()
-        schemaName =ParserUtils.getSchemaName(tableName, database)
+        tableName = parser.parse_identifier()
+        definition = parser.get_rest()
+        schemaName =ParserUtils.get_schema_name(tableName, database)
         schema = database.getSchema(schemaName)
 
         if (schema is None):
@@ -27,7 +27,7 @@ class CreateIndexParser(object):
             #         Resources.getString("CannotFindSchema"), schemaName,
             #         statement));
 
-        objectName = ParserUtils.getObjectName(tableName)
+        objectName = ParserUtils.get_object_name(tableName)
         table = schema.getTable(objectName)
 
         if (table is None):

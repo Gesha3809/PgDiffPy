@@ -11,12 +11,12 @@ class CreateTableParser(object):
         parser.expect('CREATE', 'TABLE')
 
         # Optional IF NOT EXISTS, irrelevant for our purposes
-        parser.expectOptional("IF", "NOT", "EXISTS")
+        parser.expect_optional("IF", "NOT", "EXISTS")
 
-        tableName = ParserUtils.getObjectName(parser.parseIdentifier())
+        tableName = ParserUtils.get_object_name(parser.parse_identifier())
         table = PgTable(tableName)
         # Figure it out why do we need this
-        schemaName = ParserUtils.getSchemaName(tableName, database)
+        schemaName = ParserUtils.get_schema_name(tableName, database)
         schema = database.getSchema(schemaName)
 
         if schema is None:
@@ -26,56 +26,56 @@ class CreateTableParser(object):
 
         parser.expect("(")
 
-        while not parser.expectOptional(")"):
-            if parser.expectOptional("CONSTRAINT"):
+        while not parser.expect_optional(")"):
+            if parser.expect_optional("CONSTRAINT"):
                 CreateTableParser.parseConstraint(parser, table)
             else:
                 CreateTableParser.parseColumn(parser, table)
 
-            if parser.expectOptional(")"):
+            if parser.expect_optional(")"):
                 break
             else:
                 parser.expect(",")
 
 
-        while not parser.expectOptional(";"):
-            if parser.expectOptional("INHERITS"):
+        while not parser.expect_optional(";"):
+            if parser.expect_optional("INHERITS"):
                 CreateTableParser.parseInherits(parser, table)
-            elif parser.expectOptional("WITHOUT"):
+            elif parser.expect_optional("WITHOUT"):
                 table.oids = "OIDS=false"
-            elif parser.expectOptional("WITH"):
-                if (parser.expectOptional("OIDS") or parser.expectOptional("OIDS=true")):
+            elif parser.expect_optional("WITH"):
+                if (parser.expect_optional("OIDS") or parser.expect_optional("OIDS=true")):
                     table.oids = "OIDS=true"
-                elif parser.expectOptional("OIDS=false"):
+                elif parser.expect_optional("OIDS=false"):
                     table.oids = "OIDS=false"
                 else:
                     print 'table.setWith(parser.getExpression())'
-            elif parser.expectOptional("TABLESPACE"):
+            elif parser.expect_optional("TABLESPACE"):
                 print 'table.setTablespace(parser.parseString()'
             else:
-                parser.throwUnsupportedCommand()
+                parser.throw_unsupported_command()
 
     @staticmethod
     def parseConstraint(parser, table):
-        constraint = PgConstraint(ParserUtils.getObjectName(parser.parseIdentifier()));
+        constraint = PgConstraint(ParserUtils.get_object_name(parser.parse_identifier()));
         table.addConstraint(constraint)
-        constraint.definition = parser.getExpression()
+        constraint.definition = parser.get_expression()
         constraint.tableName = table.name
 
     @staticmethod
     def parseColumn(parser, table):
-        column = PgColumn(ParserUtils.getObjectName(parser.parseIdentifier()))
+        column = PgColumn(ParserUtils.get_object_name(parser.parse_identifier()))
         table.addColumn(column)
-        column.parseDefinition(parser.getExpression())
+        column.parseDefinition(parser.get_expression())
 
     @staticmethod
     def parseInherits(parser, table):
         parser.expect("(")
 
-        while not parser.expectOptional(")"):
-            table.addInherits(ParserUtils.getObjectName(parser.parseIdentifier()))
+        while not parser.expect_optional(")"):
+            table.addInherits(ParserUtils.get_object_name(parser.parse_identifier()))
 
-            if parser.expectOptional(")"):
+            if parser.expect_optional(")"):
                 break
             else:
                 parser.expect(",")

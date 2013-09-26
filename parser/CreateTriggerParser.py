@@ -7,72 +7,72 @@ class CreateTriggerParser(object):
         parser = Parser(statement)
         parser.expect("CREATE", "TRIGGER")
 
-        triggerName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(triggerName)
+        triggerName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(triggerName)
 
         trigger = PgTrigger()
         trigger.name = objectName
 
-        if parser.expectOptional("BEFORE"):
+        if parser.expect_optional("BEFORE"):
             trigger.event = PgTrigger.EVENT_BEFORE
-        elif parser.expectOptional("AFTER"):
+        elif parser.expect_optional("AFTER"):
             trigger.event = PgTrigger.EVENT_AFTER
-        elif parser.expectOptional("INSTEAD OF"):
+        elif parser.expect_optional("INSTEAD OF"):
             trigger.event = PgTrigger.EVENT_INSTEAD_OF
 
         first = True
 
         while True:
-            if not first and not parser.expectOptional("OR"):
+            if not first and not parser.expect_optional("OR"):
                 break
-            elif parser.expectOptional("INSERT"):
+            elif parser.expect_optional("INSERT"):
                 trigger.onInsert = True
-            elif parser.expectOptional("UPDATE"):
+            elif parser.expect_optional("UPDATE"):
                 trigger.onUpdate = True
 
-                if parser.expectOptional("OF"):
+                if parser.expect_optional("OF"):
                     while True:
-                        trigger.updateColumns.append(parser.parseIdentifier())
-                        if not parser.expectOptional(","):
+                        trigger.updateColumns.append(parser.parse_identifier())
+                        if not parser.expect_optional(","):
                             break
 
-            elif parser.expectOptional("DELETE"):
+            elif parser.expect_optional("DELETE"):
                 trigger.onDelete = True
-            elif parser.expectOptional("TRUNCATE"):
+            elif parser.expect_optional("TRUNCATE"):
                 trigger.onTruncate = True
             elif (first):
                 break
             else:
-                parser.throwUnsupportedCommand()
+                parser.throw_unsupported_command()
 
             first = False
 
         parser.expect("ON")
 
-        trigger.tableName = ParserUtils.getObjectName(parser.parseIdentifier())
+        trigger.tableName = ParserUtils.get_object_name(parser.parse_identifier())
 
-        if parser.expectOptional("FOR"):
-            parser.expectOptional("EACH")
+        if parser.expect_optional("FOR"):
+            parser.expect_optional("EACH")
 
-            if parser.expectOptional("ROW"):
+            if parser.expect_optional("ROW"):
                 trigger.forEachRow = True
-            elif parser.expectOptional("STATEMENT"):
+            elif parser.expect_optional("STATEMENT"):
                 trigger.forEachRow = False
             else:
-                parser.throwUnsupportedCommand()
+                parser.throw_unsupported_command()
 
-        if parser.expectOptional("WHEN"):
+        if parser.expect_optional("WHEN"):
             parser.expect("(")
-            trigger.when = parser.getExpression()
+            trigger.when = parser.get_expression()
             parser.expect(")")
 
         parser.expect("EXECUTE", "PROCEDURE")
-        trigger.function = parser.getRest()
+        trigger.function = parser.get_rest()
 
         ignoreSlonyTrigger = ignoreSlonyTriggers and ("_slony_logtrigger" == trigger.name or "_slony_denyaccess" == trigger.name)
 
         if (not ignoreSlonyTrigger):
-            schema = database.getSchema(ParserUtils.getSchemaName(trigger.tableName, database))
+            schema = database.getSchema(ParserUtils.get_schema_name(trigger.tableName, database))
             container = schema.tables.get(trigger.tableName)
             if not container:
                 container = schema.views.get(trigger.tableName)

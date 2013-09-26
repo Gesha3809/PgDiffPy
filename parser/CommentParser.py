@@ -8,34 +8,34 @@ class CommentParser(object):
         parser = Parser(statement)
         parser.expect("COMMENT", "ON")
 
-        if parser.expectOptional("TABLE"):
+        if parser.expect_optional("TABLE"):
             CommentParser.parseTable(parser, database)
-        elif parser.expectOptional("COLUMN"):
+        elif parser.expect_optional("COLUMN"):
             CommentParser.parseColumn(parser, database)
-        elif parser.expectOptional("CONSTRAINT"):
+        elif parser.expect_optional("CONSTRAINT"):
             CommentParser.parseConstraint(parser, database)
-        elif parser.expectOptional("DATABASE"):
+        elif parser.expect_optional("DATABASE"):
             CommentParser.parseDatabase(parser, database)
-        elif parser.expectOptional("FUNCTION"):
+        elif parser.expect_optional("FUNCTION"):
             CommentParser.parseFunction(parser, database)
-        elif parser.expectOptional("INDEX"):
+        elif parser.expect_optional("INDEX"):
             CommentParser.parseIndex(parser, database)
-        elif parser.expectOptional("SCHEMA"):
+        elif parser.expect_optional("SCHEMA"):
             CommentParser.parseSchema(parser, database)
-        elif parser.expectOptional("SEQUENCE"):
+        elif parser.expect_optional("SEQUENCE"):
             CommentParser.parseSequence(parser, database)
-        elif parser.expectOptional("TRIGGER"):
+        elif parser.expect_optional("TRIGGER"):
             CommentParser.parseTrigger(parser, database)
-        elif parser.expectOptional("VIEW"):
+        elif parser.expect_optional("VIEW"):
             CommentParser.parseView(parser, database)
         # elif outputIgnoredStatements:
         #     database.addIgnoredStatement(statement)
 
     @staticmethod
     def parseTable(parser, database):
-        tableName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(tableName)
-        schemaName = ParserUtils.getSchemaName(tableName, database)
+        tableName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(tableName)
+        schemaName = ParserUtils.get_schema_name(tableName, database)
 
         table = database.getSchema(schemaName).getTable(objectName)
 
@@ -45,10 +45,10 @@ class CommentParser(object):
 
     @staticmethod
     def parseColumn(parser, database):
-        columnName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(columnName)
-        tableName = ParserUtils.getSecondObjectName(columnName)
-        schemaName = ParserUtils.getThirdObjectName(columnName)
+        columnName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(columnName)
+        tableName = ParserUtils.get_second_object_name(columnName)
+        schemaName = ParserUtils.get_third_object_name(columnName)
         schema = database.getSchema(schemaName)
 
         table = schema.getTable(tableName)
@@ -76,13 +76,13 @@ class CommentParser(object):
 
     @staticmethod
     def parseConstraint(parser, database):
-        constraintName = ParserUtils.getObjectName(parser.parseIdentifier())
+        constraintName = ParserUtils.get_object_name(parser.parse_identifier())
 
         parser.expect("ON")
 
-        tableName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(tableName)
-        schemaName = ParserUtils.getSchemaName(constraintName, database)
+        tableName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(tableName)
+        schemaName = ParserUtils.get_schema_name(constraintName, database)
 
         constraint = database.getSchema(schemaName).getTable(objectName).constraints[constraintName]
 
@@ -93,16 +93,16 @@ class CommentParser(object):
 
     @staticmethod
     def parseDatabase(parser, database):
-        parser.parseIdentifier()
+        parser.parse_identifier()
         parser.expect("IS")
         database.comment = CommentParser.getComment(parser)
         parser.expect(";")
 
     @staticmethod
     def parseFunction(parser, database):
-        functionName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(functionName)
-        schemaName = ParserUtils.getSchemaName(functionName, database)
+        functionName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(functionName)
+        schemaName = ParserUtils.get_schema_name(functionName, database)
         schema = database.getSchema(schemaName)
 
         parser.expect("(")
@@ -110,30 +110,30 @@ class CommentParser(object):
         tmpFunction = PgFunction()
         tmpFunction.name = objectName
 
-        while not parser.expectOptional(")"):
+        while not parser.expect_optional(")"):
             mode = ''
 
-            if parser.expectOptional("IN"):
+            if parser.expect_optional("IN"):
                 mode = "IN"
-            elif parser.expectOptional("OUT"):
+            elif parser.expect_optional("OUT"):
                 mode = "OUT"
-            elif parser.expectOptional("INOUT"):
+            elif parser.expect_optional("INOUT"):
                 mode = "INOUT"
-            elif parser.expectOptional("VARIADIC"):
+            elif parser.expect_optional("VARIADIC"):
                 mode = "VARIADIC"
             else:
                 mode = None
 
             position = parser.position
             argumentName = None
-            dataType = parser.parseDataType()
+            dataType = parser.parse_data_type()
 
             position2 = parser.position
 
-            if not parser.expectOptional(")") and not parser.expectOptional(","):
+            if not parser.expect_optional(")") and not parser.expect_optional(","):
                 parser.position = position
-                argumentName = ParserUtils.getObjectName(parser.parseIdentifier())
-                dataType = parser.parseDataType()
+                argumentName = ParserUtils.get_object_name(parser.parse_identifier())
+                dataType = parser.parse_data_type()
             else:
                 parser.position = position2
 
@@ -143,7 +143,7 @@ class CommentParser(object):
             argument.name = argumentName
             tmpFunction.addArgument(argument)
 
-            if parser.expectOptional(")"):
+            if parser.expect_optional(")"):
                 break
             else:
                 parser.expect(",")
@@ -156,9 +156,9 @@ class CommentParser(object):
         
     @staticmethod
     def parseIndex(parser, database):
-        indexName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(indexName)
-        schemaName = ParserUtils.getSchemaName(indexName, database)
+        indexName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(indexName)
+        schemaName = ParserUtils.get_schema_name(indexName, database)
         schema = database.getSchema(schemaName)
 
         index = schema.indexes.get(objectName)
@@ -175,7 +175,7 @@ class CommentParser(object):
             
     @staticmethod
     def parseSchema(parser, database):
-        schemaName = ParserUtils.getObjectName(parser.parseIdentifier())
+        schemaName = ParserUtils.get_object_name(parser.parse_identifier())
         schema = database.getSchema(schemaName)
 
         parser.expect("IS")
@@ -184,9 +184,9 @@ class CommentParser(object):
         
     @staticmethod
     def parseSequence(parser, database):
-        sequenceName = parser.parseIdentifier();
-        objectName = ParserUtils.getObjectName(sequenceName)
-        schemaName = ParserUtils.getSchemaName(sequenceName, database)
+        sequenceName = parser.parse_identifier();
+        objectName = ParserUtils.get_object_name(sequenceName)
+        schemaName = ParserUtils.get_schema_name(sequenceName, database)
 
         sequence = database.getSchema(schemaName).sequences[objectName]
 
@@ -196,13 +196,13 @@ class CommentParser(object):
         
     @staticmethod
     def parseTrigger(parser, database):
-        triggerName = ParserUtils.getObjectName(parser.parseIdentifier())
+        triggerName = ParserUtils.get_object_name(parser.parse_identifier())
 
         parser.expect("ON")
 
-        tableName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(tableName)
-        schemaName = ParserUtils.getSchemaName(triggerName, database)
+        tableName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(tableName)
+        schemaName = ParserUtils.get_schema_name(triggerName, database)
 
         trigger = database.getSchema(schemaName).tables[objectName].triggers[triggerName]
 
@@ -212,9 +212,9 @@ class CommentParser(object):
         
     @staticmethod
     def parseView(parser, database):
-        viewName = parser.parseIdentifier()
-        objectName = ParserUtils.getObjectName(viewName)
-        schemaName = ParserUtils.getSchemaName(viewName, database)
+        viewName = parser.parse_identifier()
+        objectName = ParserUtils.get_object_name(viewName)
+        schemaName = ParserUtils.get_schema_name(viewName, database)
 
         view = database.getSchema(schemaName).views[objectName]
 
@@ -225,7 +225,7 @@ class CommentParser(object):
 
     @staticmethod
     def getComment(parser):
-        comment = parser.parseString()
+        comment = parser.parse_string()
 
         if comment.lower() == "null".lower():
             return None

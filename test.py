@@ -26,22 +26,22 @@ class TestParser(unittest.TestCase):
 
 	# Expect optional tests
 	def test_expectOptional_word(self):
-		self.assertTrue(self.parser.expectOptional("STATEMENT"))
+		self.assertTrue(self.parser.expect_optional("STATEMENT"))
 
 	def test_expectOptional_words(self):
-		self.assertTrue(self.parser.expectOptional("STATEMENT","FOR","TEST"))
+		self.assertTrue(self.parser.expect_optional("STATEMENT","FOR","TEST"))
 
 	def test_not_expectOptional_word(self):
-		self.assertFalse(self.parser.expectOptional("WRONG_STATEMENT"))
+		self.assertFalse(self.parser.expect_optional("WRONG_STATEMENT"))
 
 	def test_not_expectOptional_words(self):
-		self.assertFalse(self.parser.expectOptional("NOT","EXPECTED","WORDS"))
+		self.assertFalse(self.parser.expect_optional("NOT","EXPECTED","WORDS"))
 
 	def test_one_not_expectOptional_word(self):
-		self.assertRaises(Exception, self.parser.expectOptional, ("WRONG", "STATEMENT","FOR","TEST"))
+		self.assertRaises(Exception, self.parser.expect_optional, ("WRONG", "STATEMENT","FOR","TEST"))
 
 	def test_first_fine_other_not_expectOptional_word(self):
-		self.assertRaises(Exception, self.parser.expectOptional, ("STATEMENT","WRONG","FOR","TEST"))
+		self.assertRaises(Exception, self.parser.expect_optional, ("STATEMENT","WRONG","FOR","TEST"))
 
 
 if __name__ == '__main__':

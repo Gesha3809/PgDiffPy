@@ -7,40 +7,40 @@ class AlterViewParser(object):
         parser = Parser(statement)
         parser.expect("ALTER", "VIEW")
 
-        viewName = parser.parseIdentifier()
-        schemaName = ParserUtils.getSchemaName(viewName, database)
+        viewName = parser.parse_identifier()
+        schemaName = ParserUtils.get_schema_name(viewName, database)
         schema = database.getSchema(schemaName)
 
         if schema is None:
             raise Exception("Cannot find schema '%s' for statement '%s'. Missing CREATE SCHEMA statement?" % (schemaName, statement))
 
-        objectName = ParserUtils.getObjectName(viewName)
+        objectName = ParserUtils.get_object_name(viewName)
         view = schema.views[objectName]
 
         if view is None:
             raise Exception("Cannot find view '%s' for statement '%s'. Missing CREATE VIEW statement?" % (viewName, statement))
 
-        while not parser.expectOptional(";"):
-            if parser.expectOptional("ALTER"):
-                parser.expectOptional("COLUMN")
+        while not parser.expect_optional(";"):
+            if parser.expect_optional("ALTER"):
+                parser.expect_optional("COLUMN")
 
-                columnName = ParserUtils.getObjectName(parser.parseIdentifier())
+                columnName = ParserUtils.get_object_name(parser.parse_identifier())
 
-                if parser.expectOptional("SET", "DEFAULT"):
-                    expression = parser.getExpression()
+                if parser.expect_optional("SET", "DEFAULT"):
+                    expression = parser.get_expression()
                     view.addColumnDefaultValue(columnName, expression)
-                elif parser.expectOptional("DROP", "DEFAULT"):
+                elif parser.expect_optional("DROP", "DEFAULT"):
                     view.removeColumnDefaultValue(columnName)
                 else:
-                    parser.throwUnsupportedCommand()
+                    parser.throw_unsupported_command()
 
-            elif parser.expectOptional("OWNER", "TO"):
+            elif parser.expect_optional("OWNER", "TO"):
                 # we do not parse this one so we just consume the identifier
                 # if (outputIgnoredStatements) {
                 #     database.addIgnoredStatement("ALTER TABLE " + viewName
                 #             + " OWNER TO " + parser.parseIdentifier() + ';');
                 # } else {
-                parser.parseIdentifier()
+                parser.parse_identifier()
                 # }
             else:
-                parser.throwUnsupportedCommand()
+                parser.throw_unsupported_command()
