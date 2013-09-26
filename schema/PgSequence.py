@@ -54,10 +54,24 @@ class PgSequence(object):
         sbSQL.append(';')
 
         if (self.comment is not None and comment != ""):
-            sbSQL.append("\n\nCOMMENT ON SEQUENCE ")
+            sbSQL.append("COMMENT ON SEQUENCE ")
             sbSQL.append(PgDiffUtils.getQuotedName(self.name))
             sbSQL.append(" IS ")
             sbSQL.append(self.comment)
             sbSQL.append(';')
+
+        return ''.join(sbSQL)
+
+    def getOwnedBySQL(self):
+        sbSQL = []
+
+        sbSQL.append("ALTER SEQUENCE ")
+        sbSQL.append(PgDiffUtils.getQuotedName(self.name))
+
+        if self.ownedBy:
+            sbSQL.append("\n\tOWNED BY ")
+            sbSQL.append(self.ownedBy)
+
+        sbSQL.append(';')
 
         return ''.join(sbSQL)

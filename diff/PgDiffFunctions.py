@@ -22,7 +22,7 @@ class PgDiffFunctions(object):
             if oldSchema is not None:
                 oldFunction = oldSchema.functions.get(newFunction.getSignature())
 
-            if oldFunction is None or newFunction != oldFunction:
+            if oldFunction is None or not newFunction.equals(oldFunction, arguments.ignoreFunctionWhitespace):
                 searchPathHelper.outputSearchPath(writer)
                 writer.writeln(newFunction.getCreationSQL())
 
@@ -47,7 +47,7 @@ class PgDiffFunctions(object):
                 writer.write(PgDiffUtils.getQuotedName(newFunction.name))
                 writer.write('(')
 
-                writer.write(','.join(argument.getDeclaration(False) for argument in newFunction.arguments.values()))
+                writer.write(','.join(argument.getDeclaration(False) for argument in newFunction.arguments))
 
                 writer.write(") IS ")
                 writer.write(newFunction.comment)
@@ -59,6 +59,6 @@ class PgDiffFunctions(object):
                 writer.write(PgDiffUtils.getQuotedName(newFunction.name))
                 writer.write('(')
 
-                writer.write(','.join(argument.getDeclaration(False) for argument in newFunction.arguments.values()))
+                writer.write(','.join(argument.getDeclaration(False) for argument in newFunction.arguments))
 
                 writer.writeln(") IS NULL;")

@@ -6,31 +6,34 @@ from helpers.OrderedDict import OrderedDict
 class PgFunction(object):
     def __init__(self):
         self.name = ''
-        self.arguments = OrderedDict()
+        self.arguments = []
         self.body = None
         self.comment = None
 
     def __eq__(self, other):
-        return self._equals(other)
+        return self._equals(other, False)
 
     def __ne__(self, other):
-        return not self._equals(other)
+        return not self._equals(other, False)
 
-    def _equals(self, other):
+    def equals(self, other, ignoreFunctionWhitespace):
+        return self._equals(other, ignoreFunctionWhitespace)
+
+
+    def _equals(self, other, ignoreFunctionWhitespace = False):
+
         if isinstance(other, PgFunction):
             if (self.name is None
                 and other.name is not None or self.name is not None
                 and self.name != other.name):
                 return False
 
-            # Do not support whitespaces for now
-            # if (ignoreFunctionWhitespace) {
-            #     thisBody = body.replaceAll("\\s+", " ");
-            #     thatBody =
-            #             function.getBody().replaceAll("\\s+", " ");
-            # } else {
-            selfBody = self.body
-            otherBody = other.body
+            if ignoreFunctionWhitespace:
+                selfBody = ' '.join(self.body.split())
+                otherBody = ' '.join(other.body.split())
+            else:
+                selfBody = self.body
+                otherBody = other.body
 
             if (selfBody is None
                 and otherBody is not None or selfBody is not None
@@ -40,16 +43,15 @@ class PgFunction(object):
             if len(self.arguments) != len(other.arguments):
                 return False
             else:
-                for argumentName, argument in self.arguments.items():
-                    # TODO: Check parameter position, not it's name and presence in dict
-                    if (argument != other.arguments.get(argumentName)):
+                for index, argument in enumerate(self.arguments):
+                    if (argument != other.arguments[index]):
                         return False
             return True
 
         return False
 
     def addArgument(self, argument):
-        self.arguments[argument.name] = argument
+        self.arguments.append(argument)
 
     def getCreationSQL(self):
         sbSQL = []
@@ -57,13 +59,13 @@ class PgFunction(object):
         sbSQL.append(PgDiffUtils.getQuotedName(self.name))
         sbSQL.append('(')
 
-        argumentsString = ', '.join([argument.getDeclaration(True) for argument in self.arguments.values()])
+        argumentsString = ', '.join([argument.getDeclaration(True) for argument in self.arguments])
         sbSQL.append(argumentsString)
 
         sbSQL.append(") ")
         sbSQL.append(self.body)
 
-        if self.comment is not None and len(comment) > 0:
+        if self.comment:
             sbSQL.append("\n\nCOMMENT ON FUNCTION ")
             sbSQL.append(PgDiffUtils.getQuotedName(self.name))
             sbSQL.append('(')
@@ -85,7 +87,7 @@ class PgFunction(object):
 
         addComma = False
 
-        for argumentName, argument in self.arguments.items():
+        for argument in self.arguments:
             if "OUT" == argument.mode:
                 continue
 
@@ -107,7 +109,7 @@ class PgFunction(object):
 
         addComma = False
 
-        for argumentName, argument in self.arguments.items():
+        for argument in self.arguments:
             if argument.mode == "OUT":
                 continue
 

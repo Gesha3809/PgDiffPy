@@ -1,9 +1,10 @@
 from diff.PgDiffUtils import PgDiffUtils
+from helpers.OrderedDict import OrderedDict
 
 class PgTable(object):
     def __init__(self, tableName):
         self.name=tableName
-        self.columns=dict()
+        self.columns=OrderedDict()
         self.indexes=dict()
         self.constraints=dict()
         self.triggers=dict()
@@ -50,22 +51,24 @@ class PgTable(object):
 
             sbSQL.append("\n)")
 
-        if (self.inherits is not None and len(self.inherits) > 0):
+        if self.inherits:
             sbSQL.append("\nINHERITS (")
 
-            first = True
+            sbSQL.append(', '.join(self.inherits))
 
-            for tableName in self.inherits:
-                if first:
-                    first = False
-                else:
-                    sbSQL.append(", ")
+            # first = True
 
-                sbSQL.append(tableName)
+            # for tableName in self.inherits:
+            #     if first:
+            #         first = False
+            #     else:
+            #         sbSQL.append(", ")
+
+            #     sbSQL.append(tableName)
 
             sbSQL.append(")")
 
-        if (self.oids is not None and len(self.oids) > 0):
+        if self.oids:
             sbSQL.append("\n")
 
             if ("OIDS=false" == self.oids):
@@ -78,7 +81,7 @@ class PgTable(object):
                 else:
                     sbSQL.append(self.oids)
 
-        if (self.tablespace is not None and len(self.tablespace) > 0):
+        if self.tablespace:
             sbSQL.append("\nTABLESPACE ")
             sbSQL.append(tablespace)
 

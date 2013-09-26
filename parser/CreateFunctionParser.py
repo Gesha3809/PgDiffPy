@@ -22,7 +22,7 @@ class CreateFunctionParser(object):
         parser.expect("(")
 
         while not parser.expectOptional(")"):
-            mode = ''
+            mode = None
 
             if parser.expectOptional("IN"):
                 mode = "IN"
@@ -32,8 +32,6 @@ class CreateFunctionParser(object):
                 mode = "INOUT"
             elif parser.expectOptional("VARIADIC"):
                 mode = "VARIADIC"
-            else:
-                mode = None
 
             position = parser.position
             argumentName = None

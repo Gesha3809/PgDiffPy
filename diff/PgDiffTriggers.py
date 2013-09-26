@@ -8,7 +8,7 @@ class PgDiffTriggers(object):
             oldTable = None
 
             if oldSchema is not None:
-                oldTable = oldSchema.tables[newTableName]
+                oldTable = oldSchema.tables.get(newTableName)
 
             # Add new triggers
             for trigger in PgDiffTriggers.getNewTriggers(oldTable, newTable):
@@ -50,24 +50,28 @@ class PgDiffTriggers(object):
                     continue
 
                 oldTrigger = oldTable.triggers.get(oldTriggerName)
-                searchPathHelper.outputSearchPath(writer)
-                writer.write("COMMENT ON TRIGGER ")
-                writer.write(PgDiffUtils.getQuotedName(newTrigger.name))
-                writer.write(" ON ")
-                writer.write(PgDiffUtils.getQuotedName(newTrigger.tableName))
-
                 if (oldTrigger.comment is None
                         and newTrigger.comment is not None
                         or oldTrigger.comment is not None
                         and newTrigger.comment is not None
                         and oldTrigger.comment !=  newTrigger.comment):
+                    searchPathHelper.outputSearchPath(writer)
+                    writer.write("COMMENT ON TRIGGER ")
+                    writer.write(PgDiffUtils.getQuotedName(newTrigger.name))
+                    writer.write(" ON ")
+                    writer.write(PgDiffUtils.getQuotedName(newTrigger.tableName))
                     writer.write(" IS ");
                     writer.write(newTrigger.comment)
+                    writer.writeln(';')
+
                 elif (oldTrigger.comment is not None and newTrigger.comment is None):
+                    searchPathHelper.outputSearchPath(writer)
+                    writer.write("COMMENT ON TRIGGER ")
+                    writer.write(PgDiffUtils.getQuotedName(newTrigger.name))
+                    writer.write(" ON ")
                     writer.write(PgDiffUtils.getQuotedName(newTrigger.tableName))
                     writer.write(" IS NULL")
-
-                writer.writeln(';')
+                    writer.writeln(';')
 
     @staticmethod
     def getNewTriggers(oldTable, newTable):
@@ -78,7 +82,8 @@ class PgDiffTriggers(object):
                 result = newTable.triggers.keys()
             else:
                 for newTriggerName, newTrigger in newTable.triggers.items():
-                    if newTriggerName not in oldTable.triggers:
+                    if (newTriggerName not in oldTable.triggers
+                        or newTrigger != oldTable.triggers[newTriggerName]):
                         result.append(newTrigger)
 
         return result
@@ -91,7 +96,8 @@ class PgDiffTriggers(object):
             newTriggers = newTable.triggers
 
             for oldTriggerName in oldTable.triggers:
-                if oldTriggerName not in newTriggers:
+                if (oldTriggerName not in newTriggers
+                    or newTriggers[oldTriggerName] != oldTable.triggers[oldTriggerName]):
                     result.append(oldTable.triggers[oldTriggerName]);
 
         return result

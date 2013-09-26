@@ -10,7 +10,7 @@ class Parser(object):
             self._expect(word, False)
 
     # Checks whether string contains at current position sequence of the words.
-    # Return True if whole sequence was found, raise Exception if first 
+    # Return True if whole sequence was found, raise Exception if first
     # statement was found but other were not found, otherwise False
     def expectOptional(self, *words):
         found =  self._expect(words[0], True)
@@ -206,12 +206,14 @@ class Parser(object):
     def _expect(self, word, isoptional):
         wordEnd = self.position + len(word)
 
-        if wordEnd <= len(self.statement):            
-            if(self.statement[self.position:wordEnd].lower() == word.lower()):
-
-                #if(wordEnd == len(word) or self.statement[wordEnd].isspace() or self.statement[wordEnd] in ";),[" or word in "(,[]"):
+        if (wordEnd <= len(self.statement)
+            and self.statement[self.position:wordEnd].lower() == word.lower()
+            and (wordEnd == len(self.statement)
+            or self.statement[wordEnd].isspace()
+            or self.statement[wordEnd] in ';),['
+            or word in '(,[]')):
                 self.position = wordEnd
-                self.skipWhitespace()                
+                self.skipWhitespace()
                 return True
 
         if isoptional:
@@ -299,7 +301,7 @@ class ParserUtils(object):
                     if endPos == -1:
                         strings.append(string[startPos:])
                         break
-                    else:                        
+                    else:
                         strings.append(string[startPos:endPos])
                         startPos = endPos + 1
 

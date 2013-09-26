@@ -1,6 +1,9 @@
+from helpers.OrderedDict import OrderedDict
+from diff.PgDiffUtils import PgDiffUtils
+
 class PgSchema(object):
     def __init__(self, schemaName):
-        self.tables = dict()
+        self.tables = OrderedDict()
         self.indexes = dict()
         self.functions = dict()
         self.sequences = dict()
@@ -8,6 +11,7 @@ class PgSchema(object):
         self.views = dict()
         self.name = schemaName
         self.comment = None
+        self.authorization = None
 
     def getName(self):
         return self.name
@@ -32,3 +36,23 @@ class PgSchema(object):
 
     def addView(self, view):
         self.views[view.name] = view
+
+    def getCreationSQL(self):
+        sbSQL = []
+        sbSQL.append("CREATE SCHEMA ")
+        sbSQL.append(PgDiffUtils.getQuotedName(self.name))
+
+        if self.authorization is not None:
+            sbSQL.append(" AUTHORIZATION ")
+            sbSQL.append(PgDiffUtils.getQuotedName(self.authorization))
+
+        sbSQL.append(';')
+
+        if self.comment:
+            sbSQL.append("\n\nCOMMENT ON SCHEMA ")
+            sbSQL.append(PgDiffUtils.getQuotedName(self.name))
+            sbSQL.append(" IS ")
+            sbSQL.append(self.comment)
+            sbSQL.append(';')
+
+        return ''.join(sbSQL)

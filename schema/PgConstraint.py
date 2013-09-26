@@ -47,5 +47,5 @@ class PgConstraint(object):
         return ''.join(sbSQL)
 
     def getDropSQL(self):
-        return "ALTER TABLE %s DROP CONSTRAINT %s;" % (PgDiffUtils.getQuotedName(self.tableName),
+        return "ALTER TABLE %s\n\tDROP CONSTRAINT %s;" % (PgDiffUtils.getQuotedName(self.tableName),
                 PgDiffUtils.getQuotedName(self.name))

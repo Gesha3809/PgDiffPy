@@ -93,7 +93,7 @@ class PgDiffSequences(object):
 
             if len(sbSQL):
                 searchPathHelper.outputSearchPath(writer)
-                writer.writeln("ALTER SEQUENCE %s %s;" % (PgDiffUtils.getQuotedName(newSequence.name), ''.join(sbSQL)))
+                writer.writeln("ALTER SEQUENCE %s%s;" % (PgDiffUtils.getQuotedName(newSequence.name), ''.join(sbSQL)))
 
             if (oldSequence.comment is None and newSequence.comment is not None
                     or oldSequence.comment is not None
@@ -104,7 +104,7 @@ class PgDiffSequences(object):
 
             elif (oldSequence.comment is not None and newSequence.comment is None):
                 searchPathHelper.outputSearchPath(writer)
-                writer.writeln("\nCOMMENT ON SEQUENCE %s IS NULL;" % PgDiffUtils.getQuotedName(newSequence.name))
+                writer.writeln("COMMENT ON SEQUENCE %s IS NULL;" % PgDiffUtils.getQuotedName(newSequence.name))
 
     @staticmethod
     def alterCreatedSequences(writer, oldSchema, newSchema, searchPathHelper):
@@ -114,4 +114,4 @@ class PgDiffSequences(object):
                     and sequence.ownedBy is not None
                     and len(sequence.ownedBy) > 0):
                 searchPathHelper.outputSearchPath(writer)
-                PgDiffUtils.getQuotedName(sequence.getOwnedBySQL())
+                writer.writeln(sequence.getOwnedBySQL())

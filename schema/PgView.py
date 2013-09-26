@@ -76,3 +76,7 @@ class PgView(object):
     def addColumnComment(self, columnName, comment):
         self.removeColumnDefaultValue(columnName)
         self.columnComments[columnName] = comment
+
+    def addColumnDefaultValue(self, columnName, defaultValue):
+        self.defaultValues[columnName] = defaultValue
+

@@ -124,8 +124,8 @@ class AlterTableParser(object):
             schema.addPrimaryKey(constraint)
             constraint.definition = "PRIMARY KEY " + parser.getExpression()
         else:
-            constraint.setDefinition = parser.getExpression()
-            
+            constraint.definition = parser.getExpression()
+
     @staticmethod
     def parseView(parser, view, viewName, database):
         while not parser.expectOptional(";"):
@@ -146,7 +146,7 @@ class AlterTableParser(object):
                     parser.parseIdentifier()
             else:
                 parser.throwUnsupportedCommand()
-    
+
     @staticmethod
     def parseSequence(parser, sequence,  sequenceName, database):
         while not parser.expectOptional(";"):

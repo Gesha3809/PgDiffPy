@@ -44,10 +44,10 @@ class PgColumn(object):
         sbSQL.append(' ')
         sbSQL.append(self.type)
 
-        if (self.defaultValue is not None and len(self.defaultValue)):
+        if self.defaultValue:
             sbSQL.append(" DEFAULT ")
             sbSQL.append(self.defaultValue)
-        elif (not self.nullValue and addDefaults):
+        elif not self.nullValue and addDefaults:
             defaultColValue = PgColumnUtils.getDefaultValue(self.type);
 
             if (defaultColValue is not None):

@@ -19,4 +19,4 @@ class PgDatabase(object):
         if schemaName is None:
             return self.defaultSchema
 
-        return self.schemas[schemaName]
+        return self.schemas.get(schemaName)

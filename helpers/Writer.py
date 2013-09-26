@@ -6,8 +6,11 @@ class Writer(object):
         return ''.join(self.strings)
 
     def write(self, string):
-        self.strings.append(string)
+        self.strings.append(str(string))
 
     def writeln(self, string):
-        self.strings.append(string)
+        self.strings.append(str(string))
         self.strings.append("\n")
+        # Add aditional line if this is end of the statement
+        if string[-1:]==';':
+            self.strings.append("\n")

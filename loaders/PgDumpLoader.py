@@ -1,6 +1,6 @@
 import sqlparse, re
-from parser.CreateSchemaParser import CreateSchemaParser
 from schema.PgDatabase import PgDatabase
+from parser.CreateSchemaParser import CreateSchemaParser
 from parser.CreateTableParser import  CreateTableParser
 from parser.AlterTableParser import AlterTableParser
 from parser.CreateIndexParser import CreateIndexParser
@@ -50,8 +50,6 @@ class PgDumpLoader(object):
     @staticmethod
     def loadDatabaseSchema(dumpFileName, ignoreSlonyTriggers = False):
         database = PgDatabase()
-
-        print "Loading file dump: %s\n" % dumpFileName
 
         statements = sqlparse.split(open(dumpFileName,'r'))
         for statement in statements:

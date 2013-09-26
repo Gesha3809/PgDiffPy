@@ -1,4 +1,5 @@
 from PgDiffUtils import PgDiffUtils
+from schema.PgColumn import PgColumnUtils
 
 class PgDiffTables(object):
 
@@ -50,8 +51,8 @@ class PgDiffTables(object):
             quotedTableName = PgDiffUtils.getQuotedName(newTable.name)
             searchPathHelper.outputSearchPath(writer)
             writer.write("ALTER TABLE ")
-            writer.write(quotedTableName)
-            writer.write(",".join(statements))
+            writer.writeln(quotedTableName)
+            writer.write(",\n".join(statements))
             writer.writeln(";")
 
             # Still test needed
@@ -63,7 +64,7 @@ class PgDiffTables(object):
                 for dropDefaultsColumn in dropDefaultsColumns:
                     _printStatements.append("\tALTER COLUMN %s DROP DEFAULT" % PgDiffUtils.getQuotedName(dropDefaultsColumn.name))
 
-                writer.write(",".join(_printStatements))
+                writer.write(",\n".join(_printStatements))
                 writer.writeln(";")
 
     @staticmethod

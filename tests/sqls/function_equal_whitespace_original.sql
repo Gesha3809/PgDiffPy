@@ -8,4 +8,4 @@ OLD.refid, OLD.price, CURRENT_TIMESTAMP);
 RETURN OLD;
 END;
 '
-    LANGUAGE plpgsql;
+LANGUAGE plpgsql;

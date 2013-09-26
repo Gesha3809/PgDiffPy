@@ -20,6 +20,25 @@ class PgTrigger(object):
         self.function = None
         self.comment = None
 
+    def __equal(self, other):
+        return (self.name == other.name
+                and self.event == other.event
+                and self.onInsert == other.onInsert
+                and self.onUpdate == other.onUpdate
+                and self.onDelete == other.onDelete
+                and self.onTruncate == other.onTruncate
+                and self.tableName == other.tableName
+                and self.forEachRow == other.forEachRow
+                and set(self.updateColumns) == set(other.updateColumns)
+                and self.when == other.when
+                and self.function == other.function)
+
+    def __eq__(self, other):
+        return self.__equal(other)
+
+    def __ne__(self, other):
+        return not self.__equal(other)
+
     def getCreationSQL(self):
         sbSQL = []
         sbSQL.append("CREATE TRIGGER ")

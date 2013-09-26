@@ -5,5 +5,5 @@ class SearchPathHelper(object):
 
     def outputSearchPath(self, writer):
         if self.searchPath is not None and not self.wasOutput:
-            writer.println(self.searchPath)
+            writer.writeln(self.searchPath)
             self.wasOutput = True

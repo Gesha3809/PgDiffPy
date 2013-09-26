@@ -10,7 +10,7 @@ class PgDiffIndexes(object):
                     writer.writeln(index.getCreationSQL())
             else:
                 for index in PgDiffIndexes.getNewIndexes(oldSchema.getTable(newTableName), newTable):
-                    searchPathHelper.outputSearchPath()
+                    searchPathHelper.outputSearchPath(writer)
                     writer.writeln(index.getCreationSQL())
 
     @staticmethod
@@ -82,7 +82,8 @@ class PgDiffIndexes(object):
 
         if (newTable is not None and oldTable is not None):
             for indexName in oldTable.indexes:
-                if indexName not in newTable.indexes:
+                if (indexName not in newTable.indexes
+                    or oldTable.indexes[indexName] != newTable.indexes[indexName]):
                     result.append(oldTable.indexes[indexName])
 
         return result

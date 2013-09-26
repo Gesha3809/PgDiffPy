@@ -22,7 +22,7 @@ class PgDiff(object):
 
     @staticmethod
     def diffDatabaseSchemas(writer, arguments, oldDatabase, newDatabase):
-        if arguments.add_transaction:
+        if arguments.addTransaction:
             writer.writeln("START TRANSACTION;")
 
         if (oldDatabase.comment is None
@@ -41,7 +41,7 @@ class PgDiff(object):
         PgDiff.createNewSchemas(writer, oldDatabase, newDatabase)
         PgDiff.updateSchemas(writer, arguments, oldDatabase, newDatabase)
 
-        if arguments.add_transaction:
+        if arguments.addTransaction:
             writer.writeln("COMMIT TRANSACTION;")
 
         # if (arguments.isOutputIgnoredStatements()) {
@@ -79,13 +79,13 @@ class PgDiff(object):
     def dropOldSchemas(writer, oldDatabase, newDatabase):
         for oldSchemaName in oldDatabase.schemas:
             if newDatabase.getSchema(oldSchemaName) is None:
-                writer.writeln("DROP SCHEMA "+ PgDiffUtils.getQuotedName(oldSchema.getName())+ " CASCADE;")
+                writer.writeln("DROP SCHEMA "+ PgDiffUtils.getQuotedName(oldSchemaName) + " CASCADE;")
 
     @staticmethod
     def createNewSchemas(writer, oldDatabase, newDatabase):
-        for newSchema in newDatabase.schemas:
-            if newDatabase.getSchema(newSchema) is None:
-                writer.writeln(newSchema.getCreationSQL())
+        for newSchemaName in newDatabase.schemas:
+            if oldDatabase.getSchema(newSchemaName) is None:
+                writer.writeln(newDatabase.schemas[newSchemaName].getCreationSQL())
 
     @staticmethod
     def updateSchemas(writer, arguments, oldDatabase, newDatabase):
@@ -98,7 +98,7 @@ class PgDiff(object):
             else:
                 searchPathHelper = SearchPathHelper(None)
 
-            oldSchema = oldDatabase.schemas[newSchemaName]
+            oldSchema = oldDatabase.schemas.get(newSchemaName)
             newSchema = newDatabase.schemas[newSchemaName]
 
             if oldSchema is not None:
@@ -154,9 +154,13 @@ if __name__ == "__main__":
     parser.add_argument('old_dump', nargs='?')
     parser.add_argument('new_dump', nargs='?')
 
-    parser.add_argument('--add-transaction', dest='add_transaction', action='store_true', help="Adds START TRANSACTION and COMMIT TRANSACTION to the generated diff file")
+    parser.add_argument('--add-transaction', dest='addTransaction', action='store_true', help="Adds START TRANSACTION and COMMIT TRANSACTION to the generated diff file")
     parser.add_argument('--add-defaults', dest='addDefaults', action='store_true', help="adds DEFAULT ... in case new column has NOT NULL constraint but no default value (the default value is dropped later)")
     parser.add_argument('--ignore-start-with', dest='ignoreStartWith', action='store_false', help="ignores START WITH modifications on SEQUENCEs (default is not to ignore these changes)")
+    parser.add_argument('--ignore-function-whitespace', dest='ignoreFunctionWhitespace', action='store_true', help="ignores multiple spaces and new lines when comparing content of functions\n\
+                                                                \t- WARNING: this may cause functions to appear to be same in cases they are\n\
+                                                                \tnot, so use this feature only if you know what you are doing")
+
 
     parser.add_argument('--debug', dest='debug', action='store_true', help="outputs debug information as trceback etc. (default is not to output traceback)")
 
