@@ -162,7 +162,6 @@ if __name__ == "__main__":
                                                                 \t- WARNING: this may cause functions to appear to be same in cases they are\n\
                                                                 \tnot, so use this feature only if you know what you are doing")
 
-
     parser.add_argument('--debug', dest='debug', action='store_true', help="outputs debug information as trceback etc. (default is not to output traceback)")
 
     arguments = parser.parse_args()
