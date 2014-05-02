@@ -122,35 +122,37 @@ if __name__ == "__main__":
 
     parser.add_argument('test_case', nargs='+')
 
-    # parser.add_argument('--debug', dest='debug', action='store_true', help="outputs debug information as trceback etc. (default is not to output traceback)")
+    # parser.add_argument('--debug', dest='debug', action='store_true', help="outputs debug
+    # information as traceback etc. (default is not to output traceback)")
 
     arguments = parser.parse_args()
 
-    testCases = []
-    if len(arguments.test_case)==1 and arguments.test_case[0]=='all':
-        testCases = PgDiffTest.testCases.values()
+    test_cases = []
+    if len(arguments.test_case) == 1 and arguments.test_case[0] == 'all':
+        test_cases = PgDiffTest.testCases.values()
     else:
         for testName in arguments.test_case:
             try:
-                testCases.append(PgDiffTest.testCases[testName])
+                test_cases.append(PgDiffTest.testCases[testName])
             except KeyError as e:
-                raise Exception("Test case %s not found in cases list. Please check test case name or add such case in PfDiffTest.testCases dict" % testName)
-
+                raise Exception("Test case %s not found in cases list. "
+                                "Please check test case name or add such case in PfDiffTest.testCases dict" % testName)
 
     failedTests = dict()
-    for testCase in testCases:
+    successfully_passed_tests = 0
+    for testCase in test_cases:
         try:
             PgDiffTest.run(testCase[0], testCase[1], testCase[2], testCase[3], testCase[4])
-                # print("Test [%s] successfuly finished\n\n" % testCase[0])
-        except PgDiffTestFailedException as e:
-            failedTests[testCase[0]] = e
         except Exception as e:
                 import sys, traceback
+                failedTests[testCase[0]] = e
                 print(traceback.print_exception(*sys.exc_info()))
+        else:
+            successfully_passed_tests += 1
 
-    print('Tests failed: %s/%s' % (len(failedTests), len(testCases)))
+    print('Passed tests: %s of %s' % (successfully_passed_tests, len(test_cases)))
 
     for testCase, exception in failedTests.items():
-        print exception
+        print('[%s] %s' % (testCase, exception))
 
-
+    exit(len(failedTests))

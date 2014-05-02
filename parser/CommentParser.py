@@ -227,7 +227,7 @@ class CommentParser(object):
     def getComment(parser):
         comment = parser.parse_string()
 
-        if comment.lower() == "null".lower():
+        if comment.lower() == "null":
             return None
 
         return comment

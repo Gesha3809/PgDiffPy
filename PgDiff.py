@@ -150,19 +150,25 @@ class PgDiff(object):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(usage='Usage: PgDiff.py [options] <old_dump> <new_dump>')
+    parser = argparse.ArgumentParser(prog='PgDiffPy', usage='python PgDiff.py [options] <old_dump> <new_dump>')
 
-    parser.add_argument('old_dump', nargs='?')
-    parser.add_argument('new_dump', nargs='?')
+    parser.add_argument('old_dump')
+    parser.add_argument('new_dump')
 
-    parser.add_argument('--add-transaction', dest='addTransaction', action='store_true', help="Adds START TRANSACTION and COMMIT TRANSACTION to the generated diff file")
-    parser.add_argument('--add-defaults', dest='addDefaults', action='store_true', help="adds DEFAULT ... in case new column has NOT NULL constraint but no default value (the default value is dropped later)")
-    parser.add_argument('--ignore-start-with', dest='ignoreStartWith', action='store_false', help="ignores START WITH modifications on SEQUENCEs (default is not to ignore these changes)")
-    parser.add_argument('--ignore-function-whitespace', dest='ignoreFunctionWhitespace', action='store_true', help="ignores multiple spaces and new lines when comparing content of functions\n\
-                                                                \t- WARNING: this may cause functions to appear to be same in cases they are\n\
-                                                                \tnot, so use this feature only if you know what you are doing")
+    parser.add_argument('--add-transaction', dest='addTransaction', action='store_true',
+                        help="Adds START TRANSACTION and COMMIT TRANSACTION to the generated diff file")
+    parser.add_argument('--add-defaults', dest='addDefaults', action='store_true',
+                        help="adds DEFAULT ... in case new column has NOT NULL constraint but no default value "
+                             "(the default value is dropped later)")
+    parser.add_argument('--ignore-start-with', dest='ignoreStartWith', action='store_false',
+                        help="ignores START WITH modifications on SEQUENCEs (default is not to ignore these changes)")
+    parser.add_argument('--ignore-function-whitespace', dest='ignoreFunctionWhitespace', action='store_true',
+                        help="ignores multiple spaces and new lines when comparing content of functions\n\
+                              \t- WARNING: this may cause functions to appear to be same in cases they are\n\
+                              \tnot, so use this feature only if you know what you are doing")
 
-    parser.add_argument('--debug', dest='debug', action='store_true', help="outputs debug information as trceback etc. (default is not to output traceback)")
+    parser.add_argument('--debug', dest='debug', action='store_true',
+                        help="outputs debug information as traceback etc. (default is not to output traceback)")
 
     arguments = parser.parse_args()
     writer = Writer()
@@ -174,6 +180,6 @@ if __name__ == "__main__":
         if arguments.debug:
             import sys
             import traceback
-            print(traceback.print_exception(*sys.exc_info()))
+            traceback.print_exception(*sys.exc_info())
         else:
             print('Error: %s' % e)

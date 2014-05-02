@@ -6,9 +6,9 @@ COMMENT ON SEQUENCE test_id_seq IS 'test table sequence';
 
 COMMENT ON TABLE test IS 'test table';
 
-COMMENT ON COLUMN test.id IS 'id column';
+COMMENT ON COLUMN test.id IS 'id column with ''quotes'' in the middle';
 
-COMMENT ON COLUMN test.text IS 'text column';
+COMMENT ON COLUMN test.text IS 'text column with ''quotes''';
 
 COMMENT ON VIEW test_view IS 'test view';
 

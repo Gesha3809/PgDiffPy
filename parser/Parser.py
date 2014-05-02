@@ -100,16 +100,18 @@ class Parser(object):
             escape = False
             end_pos = self.position + 1
 
-            for end_pos in range(end_pos, len(self.statement)):
+            while end_pos < len(self.statement):
                 char = self.statement[end_pos]
 
                 if char == '\\':
                     escape = not escape
                 elif not escape and char == '\'':
                     if end_pos + 1 < len(self.statement) and self.statement[end_pos + 1] == '\'':
+                        # Treat ''(quote)(quote) as single '(quote) and skip next position
                         end_pos += 1
                     else:
                         break
+                end_pos += 1
 
             result = self.statement[self.position: end_pos + 1]
             # except (final Throwable ex) {
