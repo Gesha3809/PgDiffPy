@@ -1,4 +1,5 @@
 import argparse
+import logging
 from helpers.Writer import Writer
 from loaders.PgDumpLoader import PgDumpLoader
 from diff.PgDiffUtils import PgDiffUtils
@@ -125,7 +126,7 @@ class PgDiff(object):
             PgDiffConstraints.dropConstraints(writer, old_schema, new_schema, True, search_path_helper)
             PgDiffConstraints.dropConstraints(writer, old_schema, new_schema, False, search_path_helper)
             PgDiffIndexes.dropIndexes(writer, old_schema, new_schema, search_path_helper)
-            # # PgDiffTables.dropClusters(oldSchema, newSchema, searchPathHelper)
+            # # PgDiffTables.dropClusters(oldSchema, newSchema, search_path_helper)
             PgDiffTables.dropTables(writer, old_schema, new_schema, search_path_helper)
             PgDiffSequences.dropSequences(writer, old_schema, new_schema, search_path_helper)
 
@@ -138,7 +139,7 @@ class PgDiff(object):
             PgDiffConstraints.createConstraints(writer, old_schema, new_schema, True, search_path_helper)
             PgDiffConstraints.createConstraints(writer, old_schema, new_schema, False, search_path_helper)
             PgDiffIndexes.createIndexes(writer, old_schema, new_schema, search_path_helper)
-            # # PgDiffTables.createClusters(oldSchema, newSchema, searchPathHelper)
+            # # PgDiffTables.createClusters(oldSchema, newSchema, search_path_helper)
             PgDiffTriggers.createTriggers(writer, old_schema, new_schema, search_path_helper)
             PgDiffViews.createViews(writer, old_schema, new_schema, search_path_helper)
             PgDiffViews.alterViews(writer, old_schema, new_schema, search_path_helper)
@@ -147,6 +148,20 @@ class PgDiff(object):
             PgDiffConstraints.alterComments(writer, old_schema, new_schema, search_path_helper)
             PgDiffIndexes.alterComments(writer, old_schema, new_schema, search_path_helper)
             PgDiffTriggers.alterComments(writer, old_schema, new_schema, search_path_helper)
+
+
+class LogLevelAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values == 'DEBUG':
+            setattr(namespace, self.dest, logging.DEBUG)
+        elif values == 'INFO':
+            setattr(namespace, self.dest, logging.INFO)
+        elif values == 'WARNING':
+            setattr(namespace, self.dest, logging.WARNING)
+        elif values == 'ERROR':
+            setattr(namespace, self.dest, logging.ERROR)
+        elif values == 'CRITICAL':
+            setattr(namespace, self.dest, logging.CRITICAL)
 
 
 if __name__ == "__main__":
@@ -167,19 +182,24 @@ if __name__ == "__main__":
                               \t- WARNING: this may cause functions to appear to be same in cases they are\n\
                               \tnot, so use this feature only if you know what you are doing")
 
-    parser.add_argument('--debug', dest='debug', action='store_true',
-                        help="outputs debug information as traceback etc. (default is not to output traceback)")
+    parser.add_argument('--loglevel', dest='loglevel', action=LogLevelAction
+                        , choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+                        , default=logging.ERROR, help="")
 
     arguments = parser.parse_args()
+    logging.basicConfig(format=u'%(filename)s:%(lineno)d [%(levelname)s] %(message)s'
+                        , level=arguments.loglevel)
+
     writer = Writer()
 
     try:
         PgDiff.create_diff(writer, arguments)
         print(writer)
     except Exception as e:
-        if arguments.debug:
+        if arguments.loglevel == logging.DEBUG:
             import sys
             import traceback
             traceback.print_exception(*sys.exc_info())
         else:
             print('Error: %s' % e)
+        exit(1)

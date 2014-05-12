@@ -1,4 +1,6 @@
-import sqlparse, re
+import sqlparse
+import re
+import logging
 from schema.PgDatabase import PgDatabase
 from parser.CreateSchemaParser import CreateSchemaParser
 from parser.CreateTableParser import  CreateTableParser
@@ -50,10 +52,12 @@ class PgDumpLoader(object):
     @staticmethod
     def loadDatabaseSchema(dumpFileName, ignoreSlonyTriggers = False):
         database = PgDatabase()
+        logging.debug('Loading %s file' % dumpFileName)
 
         statements = sqlparse.split(open(dumpFileName,'r'))
+        logging.debug('Parsed %d statements' % len(statements))
         for statement in statements:
-            statement = PgDumpLoader.stripComment(statement).strip()
+            statement = PgDumpLoader.strip_comment(statement).strip()
             if PgDumpLoader.PATTERN_CREATE_SCHEMA.match(statement):
                 CreateSchemaParser.parse(database, statement)
                 continue
@@ -103,16 +107,18 @@ class PgDumpLoader(object):
                 CommentParser.parse(database, statement)
                 continue
 
+            logging.info('Ignored statement: %s' % statement)
+
         return database
 
 
     @staticmethod
-    def stripComment(statement):
+    def strip_comment(statement):
         start = statement.find("--")
 
-        while start>=0:
+        while start >= 0:
             end = statement.find("\n", start)
-            if start<end:
+            if start < end:
                 statement = statement[end:]
             else:
                 statement = statement[:start]

@@ -1,3 +1,4 @@
+import logging
 from parser.Parser import Parser, ParserUtils
 from schema.PgConstraint import PgConstraint
 
@@ -21,6 +22,7 @@ class AlterTableParser(object):
         table = schema.tables.get(objectName)
 
         if table is None:
+            logging.debug('Table %s was not fount in schema %s' % (tableName, schema))
             view = schema.views.get(objectName)
 
             if view is not None:

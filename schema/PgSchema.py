@@ -13,6 +13,9 @@ class PgSchema(object):
         self.comment = None
         self.authorization = None
 
+    def __str__(self):
+        return self.name
+
     def getName(self):
         return self.name
 

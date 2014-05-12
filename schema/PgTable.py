@@ -14,6 +14,9 @@ class PgTable(object):
         self.comment = None
         clusterIndexName = None
 
+    def __str__(self):
+        return self.name
+
     def addColumn(self, column):
         self.columns[column.name] = column
 

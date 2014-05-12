@@ -37,7 +37,6 @@ class CreateTableParser(object):
             else:
                 parser.expect(",")
 
-
         while not parser.expect_optional(";"):
             if parser.expect_optional("INHERITS"):
                 CreateTableParser.parseInherits(parser, table)

@@ -252,7 +252,7 @@ class ParserUtils(object):
         names = ParserUtils.split_names(name)
 
         if len(names) < 2:
-            return database.defaultSchema.name
+            return database.default_schema.name
         else:
             return names[0]
 
